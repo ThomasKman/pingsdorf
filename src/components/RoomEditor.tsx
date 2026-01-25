@@ -70,19 +70,18 @@ export function RoomEditor({
 
   return (
     <div className={`room-editor ${showMinimized ? 'minimized' : ''}`}>
-      <div className="room-editor-header">
-        <h3>Room Settings</h3>
+      <div
+        className={`room-editor-header ${isMobile ? 'clickable' : ''}`}
+        onClick={(e) => {
+          // On mobile, clicking the header (but not the close button) toggles minimize
+          if (isMobile && !(e.target as HTMLElement).closest('.close-btn')) {
+            setIsMinimized(!isMinimized)
+          }
+        }}
+      >
+        <h3>Room Settings {isMobile && <span className="minimize-hint">{isMinimized ? '▲' : '▼'}</span>}</h3>
         <div className="room-editor-header-actions">
-          {isMobile && (
-            <button
-              className="minimize-btn"
-              onClick={() => setIsMinimized(!isMinimized)}
-              title={isMinimized ? 'Expand' : 'Minimize'}
-            >
-              {isMinimized ? '▲' : '▼'}
-            </button>
-          )}
-          <button className="close-btn" onClick={onClose} title="Close">✕</button>
+          <button className="close-btn" onClick={(e) => { e.stopPropagation(); onClose() }} title="Close">✕</button>
         </div>
       </div>
 
