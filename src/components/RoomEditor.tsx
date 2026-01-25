@@ -51,6 +51,10 @@ export function RoomEditor({
     onStartDrawing(newRoomName.trim(), newRoomColor)
     setNewRoomName('')
     setNewRoomColor(generateRoomColor())
+    // Auto-minimize on mobile when starting to draw
+    if (isMobile) {
+      setIsMinimized(true)
+    }
   }
 
   const startEditingName = (room: Room) => {

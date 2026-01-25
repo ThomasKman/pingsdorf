@@ -366,7 +366,7 @@ function App() {
             centerOnInit={true}
             panning={{ disabled: !isMobile && (placingPingId !== null || isDrawingRoom) }}
           >
-            {({ zoomIn, zoomOut, resetTransform }) => (
+            {() => (
               <>
                 <div className="map-controls">
                   <button
@@ -376,9 +376,6 @@ function App() {
                   >
                     + Add Ping
                   </button>
-                  <button onClick={() => zoomIn()}>+ Zoom In</button>
-                  <button onClick={() => zoomOut()}>- Zoom Out</button>
-                  <button onClick={() => resetTransform()}>Reset</button>
                   <button
                     className="settings-btn"
                     onClick={() => setShowRoomEditor(!showRoomEditor)}
