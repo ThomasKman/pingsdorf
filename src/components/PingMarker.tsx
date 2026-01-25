@@ -70,6 +70,38 @@ export function PingMarker({
     document.addEventListener('mouseup', handleMouseUp)
   }, [isPlacing, imageRef, onDrag])
 
+  // Touch support for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!isPlacing) return
+
+    // Don't start drag if touching the form
+    if ((e.target as HTMLElement).closest('.ping-placement-form')) return
+
+    e.stopPropagation()
+    isDragging.current = true
+
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      if (!isDragging.current || !imageRef.current) return
+      moveEvent.preventDefault() // Prevent scrolling while dragging
+
+      const touch = moveEvent.touches[0]
+      const rect = imageRef.current.getBoundingClientRect()
+      const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100))
+      const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100))
+
+      onDrag(x, y)
+    }
+
+    const handleTouchEnd = () => {
+      isDragging.current = false
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
+    }
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false })
+    document.addEventListener('touchend', handleTouchEnd)
+  }, [isPlacing, imageRef, onDrag])
+
   const handleConfirm = () => {
     onUpdate({ name, description, image })
     onConfirm()
@@ -124,6 +156,7 @@ export function PingMarker({
         }
       }}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
       title={isPlacing ? 'Drag to position' : ping.name || 'Unnamed ping'}
     >
       <div className="ping-dot">
@@ -136,6 +169,7 @@ export function PingMarker({
           className="ping-placement-form"
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
           <input
             ref={nameInputRef}
