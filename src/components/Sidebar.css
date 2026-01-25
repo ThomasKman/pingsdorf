@@ -268,6 +268,68 @@
   background-color: #ff4757 !important;
 }
 
+.btn-cleanup {
+  background-color: rgba(46, 213, 115, 0.2) !important;
+  color: #2ed573 !important;
+  font-weight: 600;
+}
+
+.btn-cleanup:hover {
+  background-color: #2ed573 !important;
+  color: #fff !important;
+}
+
+/* History section */
+.history-section {
+  border-top: 2px solid #333;
+  background-color: #151515;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  background-color: #1a1a1a;
+  transition: background-color 0.2s;
+}
+
+.history-header:hover {
+  background-color: #222;
+}
+
+.history-icon {
+  font-size: 1rem;
+}
+
+.history-title {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ping-item.history-item {
+  opacity: 0.7;
+  cursor: default;
+  background-color: #151515;
+}
+
+.ping-item.history-item:hover {
+  background-color: #1a1a1a;
+}
+
+.ping-cleanup-info {
+  font-size: 0.75rem;
+  color: #2ed573;
+}
+
 .ping-edit-form {
   display: flex;
   flex-direction: column;
@@ -471,6 +533,27 @@
   .selected-ping-details {
     background-color: #e8e8e8;
     border-top-color: #ddd;
+  }
+
+  .history-section {
+    background-color: #e8e8e8;
+    border-top-color: #ddd;
+  }
+
+  .history-header {
+    background-color: #eee;
+  }
+
+  .history-header:hover {
+    background-color: #e5e5e5;
+  }
+
+  .ping-item.history-item {
+    background-color: #e8e8e8;
+  }
+
+  .ping-item.history-item:hover {
+    background-color: #e0e0e0;
   }
 }
 
