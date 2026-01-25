@@ -26,8 +26,10 @@ function App() {
                 <button onClick={() => resetTransform()}>Reset</button>
               </div>
               <TransformComponent
-                wrapperClass="transform-wrapper"
-                contentClass="transform-content"
+                wrapperStyle={{
+                  width: '100%',
+                  height: '100%',
+                }}
               >
                 <img
                   src={FLOOR_PLAN_URL}
