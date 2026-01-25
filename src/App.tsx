@@ -10,54 +10,47 @@ const FLOOR_PLAN_URL = 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Samp
 function App() {
   const [pings, setPings] = useState<Ping[]>([])
   const [selectedPingId, setSelectedPingId] = useState<string | null>(null)
+  const [placingPingId, setPlacingPingId] = useState<string | null>(null)
   const imageRef = useRef<HTMLImageElement>(null)
-  const isDragging = useRef(false)
-  const dragStartPos = useRef({ x: 0, y: 0 })
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    dragStartPos.current = { x: e.clientX, y: e.clientY }
-    isDragging.current = false
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const dx = Math.abs(e.clientX - dragStartPos.current.x)
-    const dy = Math.abs(e.clientY - dragStartPos.current.y)
-    if (dx > 5 || dy > 5) {
-      isDragging.current = true
-    }
-  }
-
-  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
-    // Don't add ping if we were dragging (panning)
-    if (isDragging.current) {
-      return
-    }
-
-    const image = imageRef.current
-    if (!image) return
-
-    const rect = image.getBoundingClientRect()
-
-    // Calculate position as percentage of image dimensions
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
-
+  const handleAddPing = () => {
     const newPing: Ping = {
       id: crypto.randomUUID(),
       name: '',
       description: '',
-      x,
-      y,
+      x: 50,
+      y: 50,
       createdAt: new Date(),
     }
 
     setPings(prev => [...prev, newPing])
+    setPlacingPingId(newPing.id)
     setSelectedPingId(newPing.id)
   }
 
-  const handleSelectPing = useCallback((id: string) => {
-    setSelectedPingId(id)
+  const handleConfirmPing = useCallback(() => {
+    setPlacingPingId(null)
   }, [])
+
+  const handleCancelPing = useCallback(() => {
+    if (placingPingId) {
+      setPings(prev => prev.filter(p => p.id !== placingPingId))
+      setPlacingPingId(null)
+      setSelectedPingId(null)
+    }
+  }, [placingPingId])
+
+  const handlePingDrag = useCallback((id: string, x: number, y: number) => {
+    setPings(prev => prev.map(ping =>
+      ping.id === id ? { ...ping, x, y } : ping
+    ))
+  }, [])
+
+  const handleSelectPing = useCallback((id: string) => {
+    if (!placingPingId) {
+      setSelectedPingId(id)
+    }
+  }, [placingPingId])
 
   const handleUpdatePing = useCallback((id: string, updates: Partial<Pick<Ping, 'name' | 'description'>>) => {
     setPings(prev => prev.map(ping =>
@@ -86,10 +79,18 @@ function App() {
             minScale={0.5}
             maxScale={4}
             centerOnInit={true}
+            panning={{ disabled: placingPingId !== null }}
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
                 <div className="map-controls">
+                  <button
+                    className="add-ping-btn"
+                    onClick={handleAddPing}
+                    disabled={placingPingId !== null}
+                  >
+                    + Add Ping
+                  </button>
                   <button onClick={() => zoomIn()}>+ Zoom In</button>
                   <button onClick={() => zoomOut()}>- Zoom Out</button>
                   <button onClick={() => resetTransform()}>Reset</button>
@@ -100,17 +101,12 @@ function App() {
                     height: '100%',
                   }}
                 >
-                  <div
-                    className="floor-plan-container"
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                  >
+                  <div className="floor-plan-container">
                     <img
                       ref={imageRef}
                       src={FLOOR_PLAN_URL}
                       alt="Floor Plan"
                       className="floor-plan-image"
-                      onClick={handleImageClick}
                       draggable={false}
                     />
                     {pings.map(ping => (
@@ -118,7 +114,12 @@ function App() {
                         key={ping.id}
                         ping={ping}
                         isSelected={ping.id === selectedPingId}
+                        isPlacing={ping.id === placingPingId}
+                        imageRef={imageRef}
                         onClick={() => handleSelectPing(ping.id)}
+                        onDrag={(x, y) => handlePingDrag(ping.id, x, y)}
+                        onConfirm={handleConfirmPing}
+                        onCancel={handleCancelPing}
                       />
                     ))}
                   </div>
@@ -129,7 +130,7 @@ function App() {
         </div>
 
         <Sidebar
-          pings={pings}
+          pings={pings.filter(p => p.id !== placingPingId)}
           selectedPingId={selectedPingId}
           onSelectPing={handleSelectPing}
           onUpdatePing={handleUpdatePing}
@@ -138,7 +139,12 @@ function App() {
       </div>
 
       <footer className="app-footer">
-        <p>Click on the map to add a ping • Drag to pan • Scroll to zoom</p>
+        <p>
+          {placingPingId
+            ? 'Drag the ping to position it, then click ✓ to confirm'
+            : 'Click "Add Ping" to place a new ping • Drag to pan • Scroll to zoom'
+          }
+        </p>
       </footer>
     </div>
   )
