@@ -129,7 +129,11 @@ export function PingMarker({
       <div className="ping-pulse" />
 
       {isPlacing && (
-        <div className="ping-placement-form" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="ping-placement-form"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <input
             ref={nameInputRef}
             type="text"
