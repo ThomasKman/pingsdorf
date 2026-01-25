@@ -4,8 +4,10 @@ import { Sidebar } from './components/Sidebar'
 import { PingMarker } from './components/PingMarker'
 import { RoomOverlay } from './components/RoomOverlay'
 import { RoomEditor } from './components/RoomEditor'
+import { UserSelector } from './components/UserSelector'
 import type { Ping } from './types/Ping'
 import type { Room, Point } from './types/Room'
+import { MOCK_USERS } from './types/User'
 import { findRoomForPoint } from './utils/geometry'
 import './App.css'
 
@@ -15,6 +17,7 @@ function App() {
   const [pings, setPings] = useState<Ping[]>([])
   const [selectedPingId, setSelectedPingId] = useState<string | null>(null)
   const [placingPingId, setPlacingPingId] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState(MOCK_USERS[0].id)
   const imageRef = useRef<HTMLImageElement>(null)
 
   // Room state
@@ -44,6 +47,7 @@ function App() {
       description: '',
       x: 50,
       y: 50,
+      userId: currentUserId,
       createdAt: new Date(),
     }
 
@@ -155,8 +159,17 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>Pingsdorf</h1>
-        <p className="subtitle">Ping items on a map that your SO forgot to put away</p>
+        <div className="header-content">
+          <div className="header-title">
+            <h1>Pingsdorf</h1>
+            <p className="subtitle">Ping items on a map that your SO forgot to put away</p>
+          </div>
+          <UserSelector
+            users={MOCK_USERS}
+            currentUserId={currentUserId}
+            onSelectUser={setCurrentUserId}
+          />
+        </div>
       </header>
 
       <div className="main-content">
@@ -214,6 +227,7 @@ function App() {
                       <PingMarker
                         key={ping.id}
                         ping={ping}
+                        userColor={MOCK_USERS.find(u => u.id === ping.userId)?.color}
                         isSelected={ping.id === selectedPingId}
                         isPlacing={ping.id === placingPingId}
                         imageRef={imageRef}
@@ -252,6 +266,8 @@ function App() {
         <Sidebar
           pings={pings.filter(p => p.id !== placingPingId)}
           rooms={rooms}
+          users={MOCK_USERS}
+          currentUserId={currentUserId}
           selectedPingId={selectedPingId}
           onSelectPing={handleSelectPing}
           onUpdatePing={handleUpdatePing}
