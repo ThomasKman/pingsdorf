@@ -21,6 +21,27 @@
   border-bottom: 1px solid #333;
 }
 
+.room-editor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.minimize-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.minimize-btn:hover {
+  color: #fff;
+}
+
 .room-editor-header h3 {
   margin: 0;
   font-size: 1rem;
@@ -279,6 +300,35 @@
   }
 }
 
+/* Minimized state drawing info bar */
+.minimized-drawing-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: #2a2a2a;
+  border-top: 1px solid #333;
+}
+
+.drawing-status {
+  font-size: 0.85rem;
+  color: #2ed573;
+}
+
+.btn-cancel-mini {
+  padding: 0.4rem 0.8rem;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-cancel-mini:hover {
+  background-color: #ff4757;
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
   .room-editor {
@@ -292,6 +342,16 @@
     border-radius: 16px 16px 0 0;
     border: none;
     border-top: 1px solid #333;
+    transition: max-height 0.3s ease;
+  }
+
+  /* Minimized state on mobile */
+  .room-editor.minimized {
+    max-height: none;
+  }
+
+  .room-editor.minimized .room-editor-header {
+    border-bottom: none;
   }
 
   .room-editor-header {
@@ -299,7 +359,8 @@
     padding-top: max(1rem, env(safe-area-inset-top));
   }
 
-  .close-btn {
+  .close-btn,
+  .minimize-btn {
     min-width: 44px;
     min-height: 44px;
     display: flex;
@@ -336,5 +397,14 @@
     min-width: 36px;
     min-height: 36px;
     font-size: 1rem;
+  }
+
+  .minimized-drawing-info {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .btn-cancel-mini {
+    min-height: 40px;
+    padding: 0.5rem 1rem;
   }
 }

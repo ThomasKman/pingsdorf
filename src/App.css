@@ -293,3 +293,259 @@
     display: none;
   }
 }
+
+/* Mobile Crosshair for Ping Placement */
+.mobile-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.crosshair-vertical {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 60px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    #2ed573 20%,
+    #2ed573 80%,
+    transparent 100%
+  );
+  top: -30px;
+}
+
+.crosshair-horizontal {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  width: 60px;
+  background: linear-gradient(to right,
+    transparent 0%,
+    #2ed573 20%,
+    #2ed573 80%,
+    transparent 100%
+  );
+  left: -30px;
+}
+
+.crosshair-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border: 3px solid #2ed573;
+  border-radius: 50%;
+  background-color: rgba(46, 213, 115, 0.3);
+  box-shadow: 0 0 10px rgba(46, 213, 115, 0.5);
+}
+
+/* Mobile Ping Form */
+.mobile-ping-form {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #1a1a1a;
+  border-radius: 16px 16px 0 0;
+  border-top: 1px solid #333;
+  padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 200;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-ping-form-header {
+  font-size: 0.85rem;
+  color: #2ed573;
+  text-align: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #333;
+}
+
+.mobile-ping-input,
+.mobile-ping-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #2a2a2a;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px; /* Prevents iOS zoom */
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.mobile-ping-input:focus,
+.mobile-ping-textarea:focus {
+  outline: none;
+  border-color: #2ed573;
+}
+
+.mobile-ping-input::placeholder,
+.mobile-ping-textarea::placeholder {
+  color: #666;
+}
+
+.mobile-ping-textarea {
+  resize: vertical;
+  min-height: 50px;
+}
+
+.mobile-ping-image-section {
+  margin-top: 0.25rem;
+}
+
+.mobile-ping-image-upload {
+  display: block;
+  cursor: pointer;
+}
+
+.mobile-ping-image-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #2a2a2a;
+  border: 1px dashed #555;
+  border-radius: 8px;
+  color: #888;
+  font-size: 0.9rem;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.mobile-ping-image-upload:hover .mobile-ping-image-upload-btn {
+  border-color: #2ed573;
+  color: #2ed573;
+}
+
+.mobile-ping-image-preview {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mobile-ping-image-preview img {
+  width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+}
+
+.mobile-ping-image-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 71, 87, 0.9);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.mobile-ping-image-remove:hover {
+  background-color: #ff4757;
+  transform: scale(1.1);
+}
+
+.mobile-ping-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 0.25rem;
+}
+
+.mobile-ping-confirm {
+  flex: 1;
+  padding: 14px 20px;
+  background-color: #2ed573;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  transition: background-color 0.2s;
+}
+
+.mobile-ping-confirm:hover {
+  background-color: #26c066;
+}
+
+.mobile-ping-cancel {
+  padding: 14px 18px;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  min-height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.mobile-ping-cancel:hover {
+  background-color: #ff4757;
+}
+
+/* Light mode support for mobile ping form */
+@media (prefers-color-scheme: light) {
+  .mobile-ping-form {
+    background-color: #fff;
+    border-top-color: #ddd;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-ping-form-header {
+    border-bottom-color: #ddd;
+  }
+
+  .mobile-ping-input,
+  .mobile-ping-textarea {
+    background-color: #f5f5f5;
+    border-color: #ddd;
+    color: #333;
+  }
+
+  .mobile-ping-input::placeholder,
+  .mobile-ping-textarea::placeholder {
+    color: #999;
+  }
+
+  .mobile-ping-image-upload-btn {
+    background-color: #f5f5f5;
+  }
+
+  .mobile-ping-cancel {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+}
