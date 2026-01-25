@@ -25,11 +25,22 @@
   margin: 0.25rem 0 0 0;
 }
 
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
 .map-container {
   flex: 1;
   position: relative;
   background-color: #2a2a2a;
   overflow: hidden;
+}
+
+.floor-plan-container {
+  position: relative;
+  display: inline-block;
 }
 
 .map-controls {
@@ -61,6 +72,22 @@
 
 .map-controls button:active {
   transform: scale(0.95);
+}
+
+.map-controls button.add-ping-btn {
+  background-color: #2ed573;
+  color: #fff;
+  font-weight: 600;
+}
+
+.map-controls button.add-ping-btn:hover {
+  background-color: #26c066;
+}
+
+.map-controls button.add-ping-btn:disabled {
+  background-color: #555;
+  color: #888;
+  cursor: not-allowed;
 }
 
 .floor-plan-image {
