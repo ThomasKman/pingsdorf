@@ -8,4 +8,7 @@ export interface Ping {
   roomId?: string  // ID of the room this ping is in (auto-detected)
   userId: string  // ID of the user who created this ping
   createdAt: Date
+  // Cleanup tracking
+  cleanedUpBy?: string  // ID of the user who cleaned this up
+  cleanedUpAt?: Date  // When it was cleaned up
 }

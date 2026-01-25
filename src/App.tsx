@@ -99,6 +99,17 @@ function App() {
     }
   }, [selectedPingId])
 
+  const handleCleanUpPing = useCallback((id: string) => {
+    setPings(prev => prev.map(ping =>
+      ping.id === id
+        ? { ...ping, cleanedUpBy: currentUserId, cleanedUpAt: new Date() }
+        : ping
+    ))
+    if (selectedPingId === id) {
+      setSelectedPingId(null)
+    }
+  }, [currentUserId, selectedPingId])
+
   // Room handlers
   const handleStartDrawingRoom = useCallback((name: string, color: string) => {
     setIsDrawingRoom(true)
@@ -223,7 +234,7 @@ function App() {
                       drawingPoints={drawingPoints}
                       onRoomClick={setEditingRoomId}
                     />
-                    {pings.map(ping => (
+                    {pings.filter(p => !p.cleanedUpAt).map(ping => (
                       <PingMarker
                         key={ping.id}
                         ping={ping}
@@ -272,6 +283,7 @@ function App() {
           onSelectPing={handleSelectPing}
           onUpdatePing={handleUpdatePing}
           onDeletePing={handleDeletePing}
+          onCleanUpPing={handleCleanUpPing}
         />
       </div>
 
