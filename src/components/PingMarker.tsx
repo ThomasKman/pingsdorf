@@ -4,6 +4,7 @@ import './PingMarker.css'
 
 interface PingMarkerProps {
   ping: Ping
+  userColor?: string
   isSelected: boolean
   isPlacing: boolean
   imageRef: React.RefObject<HTMLImageElement | null>
@@ -16,6 +17,7 @@ interface PingMarkerProps {
 
 export function PingMarker({
   ping,
+  userColor,
   isSelected,
   isPlacing,
   imageRef,
@@ -113,7 +115,8 @@ export function PingMarker({
       style={{
         left: `${ping.x}%`,
         top: `${ping.y}%`,
-      }}
+        '--ping-color': userColor || '#ff6b6b',
+      } as React.CSSProperties}
       onClick={(e) => {
         e.stopPropagation()
         if (!isPlacing) {
