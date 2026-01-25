@@ -5,5 +5,6 @@ export interface Ping {
   image?: string  // Optional base64 data URL for attached image
   x: number  // X coordinate as percentage of image width (0-100)
   y: number  // Y coordinate as percentage of image height (0-100)
+  roomId?: string  // ID of the room this ping is in (auto-detected)
   createdAt: Date
 }

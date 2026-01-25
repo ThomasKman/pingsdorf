@@ -98,6 +98,16 @@
   transform: none;
 }
 
+.map-controls button.settings-btn {
+  margin-top: 0.5rem;
+  background-color: rgba(100, 108, 255, 0.3);
+  border: 1px solid #646cff;
+}
+
+.map-controls button.settings-btn:hover {
+  background-color: rgba(100, 108, 255, 0.8);
+}
+
 .floor-plan-image {
   max-width: none;
   display: block;
