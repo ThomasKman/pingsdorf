@@ -179,6 +179,88 @@
   background-color: #ff4757;
 }
 
+/* Image indicator on ping dot */
+.ping-has-image {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 10px;
+  background-color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Image upload section */
+.ping-image-section {
+  margin-top: 4px;
+}
+
+.ping-image-upload {
+  display: block;
+  cursor: pointer;
+}
+
+.ping-image-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #2a2a2a;
+  border: 1px dashed #555;
+  border-radius: 6px;
+  color: #888;
+  font-size: 0.85rem;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.ping-image-upload:hover .ping-image-upload-btn {
+  border-color: #2ed573;
+  color: #2ed573;
+}
+
+.ping-image-preview {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ping-image-preview img {
+  width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+  display: block;
+  border-radius: 6px;
+}
+
+.ping-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 71, 87, 0.9);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.ping-image-remove:hover {
+  background-color: #ff4757;
+  transform: scale(1.1);
+}
+
 /* Light mode support */
 @media (prefers-color-scheme: light) {
   .ping-placement-form {

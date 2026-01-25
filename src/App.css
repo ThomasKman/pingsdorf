@@ -78,16 +78,24 @@
   background-color: #2ed573;
   color: #fff;
   font-weight: 600;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);
 }
 
 .map-controls button.add-ping-btn:hover {
   background-color: #26c066;
+  box-shadow: 0 6px 20px rgba(46, 213, 115, 0.5);
+  transform: translateY(-2px);
 }
 
 .map-controls button.add-ping-btn:disabled {
   background-color: #555;
   color: #888;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .floor-plan-image {
