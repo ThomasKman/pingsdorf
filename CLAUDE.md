@@ -6,7 +6,13 @@
 
 ## Current Project State
 
-This project is a **Vite + React + TypeScript** application (initialized January 2026). The basic scaffolding is complete and ready for feature development.
+This project is a **Vite + React + TypeScript** application (initialized January 2026). Core features are implemented:
+
+- Interactive floor plan with pan and zoom
+- Add pings with drag-and-drop positioning
+- Name, description, and optional photo for each ping
+- Sidebar with ping list and details
+- Edit and delete pings
 
 ## Technology Stack
 
@@ -19,56 +25,38 @@ This project is a **Vite + React + TypeScript** application (initialized January
 ### Frontend
 - **Framework:** React 19.2.3
 - **React DOM:** 19.2.3
+- **Pan/Zoom:** react-zoom-pan-pinch
 
 ### Development Tools
 - **Linting:** ESLint 9.25.0 with TypeScript support
 - **Type Checking:** TypeScript with strict mode enabled
 - **Hot Module Replacement:** Via Vite + @vitejs/plugin-react
 
-### Future Additions (Recommended)
-- **Mapping Library:** Leaflet, Mapbox GL, or Google Maps API
-- **Testing:** Vitest (Vite-native) or Jest
-- **State Management:** React Context, Zustand, or similar (as needed)
-
 ## Project Structure
 
 ```
 pingsdorf/
 ├── src/
-│   ├── main.tsx          # Application entry point
-│   ├── App.tsx           # Root React component
-│   ├── App.css           # Component-specific styles
-│   ├── index.css         # Global styles
-│   └── vite-env.d.ts     # Vite type definitions
+│   ├── components/
+│   │   ├── PingMarker.tsx    # Ping marker with placement form
+│   │   ├── PingMarker.css
+│   │   ├── Sidebar.tsx       # Sidebar with ping list
+│   │   └── Sidebar.css
+│   ├── types/
+│   │   └── Ping.ts           # Ping interface definition
+│   ├── main.tsx              # Application entry point
+│   ├── App.tsx               # Root React component
+│   ├── App.css               # Main app styles
+│   ├── index.css             # Global styles
+│   └── vite-env.d.ts         # Vite type definitions
 ├── public/
-│   └── vite.svg          # Favicon
-├── index.html            # HTML entry point
-├── package.json          # Dependencies and scripts
-├── vite.config.ts        # Vite configuration
-├── tsconfig.json         # TypeScript config (references)
-├── tsconfig.app.json     # TypeScript config for app code
-├── tsconfig.node.json    # TypeScript config for Node files
-├── eslint.config.js      # ESLint flat config
-├── .gitignore            # Git ignore patterns
-├── README.md             # Project documentation
-└── CLAUDE.md             # This file
-```
-
-### Recommended Directory Additions
-
-As the project grows, add these directories to `src/`:
-
-```
-src/
-├── components/           # Reusable UI components
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility functions and helpers
-├── types/                # TypeScript type definitions
-├── features/             # Feature-specific modules
-│   ├── map/              # Map display and interaction
-│   ├── pins/             # Pin/marker management
-│   └── auth/             # Authentication (if needed)
-└── assets/               # Images, icons, etc.
+│   └── vite.svg              # Favicon
+├── index.html                # HTML entry point
+├── package.json              # Dependencies and scripts
+├── vite.config.ts            # Vite configuration
+├── tsconfig.json             # TypeScript config
+├── eslint.config.js          # ESLint flat config
+└── CLAUDE.md                 # This file
 ```
 
 ## Commands Reference
@@ -90,6 +78,51 @@ npm run preview
 npm run lint
 ```
 
+## Implemented Features
+
+### Interactive Map Display
+- Pan and zoom floor plan image
+- Zoom controls (in, out, reset)
+- Centered display with proper aspect ratio
+
+### Item Pinging
+- "Add Ping" button to create new pings
+- Drag-and-drop positioning on the map
+- Inline form for name, description, and photo
+- Pings stay positioned relative to floor plan
+- Visual indicators (red dots with pulse animation)
+- Photo indicator (📷) on pings with images
+
+### Sidebar
+- List of all pings with thumbnails
+- Click to select and highlight on map
+- Edit name and description inline
+- Delete pings
+- Selected ping details panel with full image
+
+## Future Features (Planned)
+
+### 1. Multi-User Support
+- Add multiple users with authentication
+- Pings are owned by the user who created them
+- Other users can view but not edit pings
+- "Clean up" functionality for completing pings
+- Sidebar split into "Your Pings" and "Partner's Pings"
+- Optional ping history view
+
+### 2. Room Management
+- Settings panel to define rooms on the floor plan
+- Draw room boundaries on the map
+- Pings automatically categorized by room
+- Sidebar grouped by room
+- "Other" category for pings outside defined rooms
+
+### 3. User Authentication
+- Login/signup flow
+- Account linking between partners
+- Session management
+- Profile settings
+
 ## Development Guidelines
 
 ### Code Style
@@ -97,58 +130,22 @@ npm run lint
 - Follow ESLint rules (run `npm run lint` to check)
 - Use functional components with hooks
 - Use meaningful variable and function names
-- Keep components small and focused on a single responsibility
+- Keep components small and focused
 
 ### TypeScript Conventions
 - Strict mode is enabled - avoid `any` types
-- Define interfaces/types in separate files when reused
+- Define interfaces/types in `src/types/`
 - Use `type` for unions/intersections, `interface` for object shapes
-- Export types alongside components when relevant
 
 ### React Patterns
 - Use functional components exclusively
 - Prefer React hooks for state and side effects
 - Keep state as close to where it's used as possible
-- Use React.memo() sparingly and only when profiling shows benefit
 
 ### File Naming
-- React components: PascalCase (`MapView.tsx`, `PinMarker.tsx`)
+- React components: PascalCase (`PingMarker.tsx`)
 - Hooks: camelCase with `use` prefix (`useMapInteraction.ts`)
-- Utilities: camelCase (`formatDate.ts`, `validateInput.ts`)
-- Types: PascalCase (`MapTypes.ts`, `PinData.ts`)
-
-### Git Workflow
-- Branch naming: Use descriptive names (e.g., `feature/map-component`, `fix/pin-placement`)
-- Commit messages: Write clear, concise messages describing what changed and why
-- Keep commits atomic and focused
-
-### Environment Variables
-- Never commit `.env` files with sensitive data
-- Use `.env.example` as a template for required environment variables
-- Access via `import.meta.env.VITE_*` in code
-
-## Key Features to Implement
-
-Based on the project description, core features should include:
-
-1. **Interactive Map Display**
-   - Render a map of a home/space
-   - Support zooming and panning
-   - Custom floor plan support (image overlay)
-
-2. **Item Pinging**
-   - Allow users to place pins/markers on the map
-   - Add descriptions to pins (what item, when placed)
-   - Visual indicators for pin status
-
-3. **User Notifications**
-   - Notify the other user when items are pinged
-   - Track ping history
-   - Mark items as "put away"
-
-4. **User Authentication** (if multi-user)
-   - Account creation and login
-   - Link accounts between partners
+- Types: PascalCase (`Ping.ts`)
 
 ## AI Assistant Instructions
 
@@ -176,17 +173,12 @@ When working on this codebase:
    - Run `npm run lint` to check for linting issues
    - Test changes with `npm run dev` when possible
 
-5. **Documentation:**
-   - Update README.md when adding major features
-   - Document complex logic with inline comments
-   - Keep this CLAUDE.md file updated as the project evolves
-
 ## Security Considerations
 
-- Sanitize all user inputs
+- Images are stored as base64 in memory (limited to 5MB each)
+- No backend/authentication currently - all data is client-side only
+- Sanitize all user inputs when backend is added
 - Use environment variables for API keys and secrets
-- Implement proper authentication if storing user data
-- Follow OWASP guidelines for web application security
 - Use HTTPS in production
 
 ## Useful Links
@@ -194,8 +186,9 @@ When working on this codebase:
 - [Vite Documentation](https://vite.dev/guide/)
 - [React Documentation](https://react.dev/)
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+- [react-zoom-pan-pinch](https://github.com/BetterTyped/react-zoom-pan-pinch)
 
 ---
 
 *Last updated: January 2026*
-*Project status: Scaffolded - ready for feature development*
+*Project status: Core features implemented*

@@ -52,7 +52,7 @@ function App() {
     }
   }, [placingPingId])
 
-  const handleUpdatePing = useCallback((id: string, updates: Partial<Pick<Ping, 'name' | 'description'>>) => {
+  const handleUpdatePing = useCallback((id: string, updates: Partial<Pick<Ping, 'name' | 'description' | 'image'>>) => {
     setPings(prev => prev.map(ping =>
       ping.id === id ? { ...ping, ...updates } : ping
     ))
