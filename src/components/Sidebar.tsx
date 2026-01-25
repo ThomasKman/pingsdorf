@@ -6,7 +6,7 @@ interface SidebarProps {
   pings: Ping[]
   selectedPingId: string | null
   onSelectPing: (id: string) => void
-  onUpdatePing: (id: string, updates: Partial<Pick<Ping, 'name' | 'description'>>) => void
+  onUpdatePing: (id: string, updates: Partial<Pick<Ping, 'name' | 'description' | 'image'>>) => void
   onDeletePing: (id: string) => void
 }
 
@@ -44,7 +44,7 @@ export function Sidebar({ pings, selectedPingId, onSelectPing, onUpdatePing, onD
       {pings.length === 0 ? (
         <div className="sidebar-empty">
           <p>No pings yet</p>
-          <p className="hint">Click on the map to add a ping</p>
+          <p className="hint">Click "Add Ping" to add one</p>
         </div>
       ) : (
         <ul className="ping-list">
@@ -76,8 +76,16 @@ export function Sidebar({ pings, selectedPingId, onSelectPing, onUpdatePing, onD
                 </div>
               ) : (
                 <>
+                  {ping.image && (
+                    <div className="ping-thumbnail">
+                      <img src={ping.image} alt="" />
+                    </div>
+                  )}
                   <div className="ping-info">
-                    <span className="ping-name">{ping.name || 'Unnamed ping'}</span>
+                    <span className="ping-name">
+                      {ping.image && <span className="ping-has-photo">📷</span>}
+                      {ping.name || 'Unnamed ping'}
+                    </span>
                     {ping.description && (
                       <span className="ping-description">{ping.description}</span>
                     )}
@@ -117,6 +125,11 @@ export function Sidebar({ pings, selectedPingId, onSelectPing, onUpdatePing, onD
       {selectedPing && editingId !== selectedPing.id && (
         <div className="selected-ping-details">
           <h3>Selected Ping</h3>
+          {selectedPing.image && (
+            <div className="detail-image">
+              <img src={selectedPing.image} alt={selectedPing.name || 'Ping image'} />
+            </div>
+          )}
           <p className="detail-name">{selectedPing.name || 'Unnamed ping'}</p>
           {selectedPing.description && (
             <p className="detail-description">{selectedPing.description}</p>

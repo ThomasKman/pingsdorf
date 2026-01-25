@@ -9,7 +9,7 @@ interface PingMarkerProps {
   imageRef: React.RefObject<HTMLImageElement | null>
   onClick: () => void
   onDrag: (x: number, y: number) => void
-  onUpdate: (updates: Partial<Pick<Ping, 'name' | 'description'>>) => void
+  onUpdate: (updates: Partial<Pick<Ping, 'name' | 'description' | 'image'>>) => void
   onConfirm: () => void
   onCancel: () => void
 }
@@ -28,7 +28,9 @@ export function PingMarker({
   const isDragging = useRef(false)
   const [name, setName] = useState(ping.name)
   const [description, setDescription] = useState(ping.description)
+  const [image, setImage] = useState<string | undefined>(ping.image)
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isPlacing && nameInputRef.current) {
@@ -67,7 +69,7 @@ export function PingMarker({
   }, [isPlacing, imageRef, onDrag])
 
   const handleConfirm = () => {
-    onUpdate({ name, description })
+    onUpdate({ name, description, image })
     onConfirm()
   }
 
@@ -77,6 +79,31 @@ export function PingMarker({
       handleConfirm()
     } else if (e.key === 'Escape') {
       onCancel()
+    }
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Limit file size to 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const result = event.target?.result as string
+      setImage(result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setImage(undefined)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
@@ -96,7 +123,9 @@ export function PingMarker({
       onMouseDown={handleMouseDown}
       title={isPlacing ? 'Drag to position' : ping.name || 'Unnamed ping'}
     >
-      <div className="ping-dot" />
+      <div className="ping-dot">
+        {ping.image && !isPlacing && <span className="ping-has-image">📷</span>}
+      </div>
       <div className="ping-pulse" />
 
       {isPlacing && (
@@ -118,6 +147,34 @@ export function PingMarker({
             className="ping-textarea"
             rows={2}
           />
+
+          <div className="ping-image-section">
+            {image ? (
+              <div className="ping-image-preview">
+                <img src={image} alt="Preview" />
+                <button
+                  type="button"
+                  className="ping-image-remove"
+                  onClick={removeImage}
+                  title="Remove image"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <label className="ping-image-upload">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  hidden
+                />
+                <span className="ping-image-upload-btn">📷 Add Photo</span>
+              </label>
+            )}
+          </div>
+
           <div className="ping-placement-buttons">
             <button
               className="ping-confirm"
