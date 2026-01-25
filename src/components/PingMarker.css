@@ -82,55 +82,125 @@
   }
 }
 
-.ping-placement-controls {
+/* Placement form */
+.ping-placement-form {
   position: absolute;
   top: 50%;
-  left: calc(100% + 8px);
+  left: calc(100% + 12px);
   transform: translateY(-50%);
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px;
   display: flex;
-  gap: 4px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   z-index: 10;
 }
 
-.ping-placement-controls button {
-  width: 28px;
-  height: 28px;
+.ping-input,
+.ping-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.ping-input:focus,
+.ping-textarea:focus {
+  outline: none;
+  border-color: #2ed573;
+}
+
+.ping-input::placeholder,
+.ping-textarea::placeholder {
+  color: #666;
+}
+
+.ping-textarea {
+  resize: vertical;
+  min-height: 50px;
+}
+
+.ping-placement-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ping-placement-buttons button {
+  flex: 1;
+  padding: 8px 12px;
   border: none;
-  border-radius: 50%;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 0.9rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  gap: 4px;
+  transition: background-color 0.2s, transform 0.1s;
 }
 
-.ping-placement-controls button:hover {
-  transform: scale(1.1);
+.ping-placement-buttons button:hover {
+  transform: translateY(-1px);
 }
 
-.ping-placement-controls button:active {
-  transform: scale(0.95);
+.ping-placement-buttons button:active {
+  transform: translateY(0);
 }
 
-.ping-confirm {
+.ping-placement-buttons .ping-confirm {
   background-color: #2ed573;
   color: #fff;
 }
 
-.ping-confirm:hover {
+.ping-placement-buttons .ping-confirm:hover {
   background-color: #26c066;
-  box-shadow: 0 3px 10px rgba(46, 213, 115, 0.4);
 }
 
-.ping-cancel {
-  background-color: #ff4757;
+.ping-placement-buttons .ping-cancel {
+  background-color: #444;
   color: #fff;
+  flex: 0;
+  padding: 8px 14px;
 }
 
-.ping-cancel:hover {
-  background-color: #ff3344;
-  box-shadow: 0 3px 10px rgba(255, 71, 87, 0.4);
+.ping-placement-buttons .ping-cancel:hover {
+  background-color: #ff4757;
+}
+
+/* Light mode support */
+@media (prefers-color-scheme: light) {
+  .ping-placement-form {
+    background-color: #fff;
+    border-color: #ddd;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .ping-input,
+  .ping-textarea {
+    background-color: #f5f5f5;
+    border-color: #ddd;
+    color: #333;
+  }
+
+  .ping-input::placeholder,
+  .ping-textarea::placeholder {
+    color: #999;
+  }
+
+  .ping-placement-buttons .ping-cancel {
+    background-color: #e0e0e0;
+    color: #333;
+  }
 }

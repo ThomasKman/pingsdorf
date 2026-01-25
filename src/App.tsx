@@ -118,6 +118,7 @@ function App() {
                         imageRef={imageRef}
                         onClick={() => handleSelectPing(ping.id)}
                         onDrag={(x, y) => handlePingDrag(ping.id, x, y)}
+                        onUpdate={(updates) => handleUpdatePing(ping.id, updates)}
                         onConfirm={handleConfirmPing}
                         onCancel={handleCancelPing}
                       />
@@ -141,7 +142,7 @@ function App() {
       <footer className="app-footer">
         <p>
           {placingPingId
-            ? 'Drag the ping to position it, then click ✓ to confirm'
+            ? 'Drag the ping to position • Fill in the details • Press Enter or click ✓ Add'
             : 'Click "Add Ping" to place a new ping • Drag to pan • Scroll to zoom'
           }
         </p>
