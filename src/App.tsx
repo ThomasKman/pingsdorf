@@ -18,6 +18,7 @@ function App() {
   const [selectedPingId, setSelectedPingId] = useState<string | null>(null)
   const [placingPingId, setPlacingPingId] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState(MOCK_USERS[0].id)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
 
   // Room state
@@ -175,11 +176,23 @@ function App() {
             <h1>Pingsdorf</h1>
             <p className="subtitle">Ping items on a map that your SO forgot to put away</p>
           </div>
-          <UserSelector
-            users={MOCK_USERS}
-            currentUserId={currentUserId}
-            onSelectUser={setCurrentUserId}
-          />
+          <div className="header-actions">
+            <UserSelector
+              users={MOCK_USERS}
+              currentUserId={currentUserId}
+              onSelectUser={setCurrentUserId}
+            />
+            <button
+              className="sidebar-toggle"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Toggle sidebar"
+            >
+              <span className="hamburger-icon">☰</span>
+              {pings.filter(p => !p.cleanedUpAt).length > 0 && (
+                <span className="ping-badge">{pings.filter(p => !p.cleanedUpAt).length}</span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -280,7 +293,15 @@ function App() {
           users={MOCK_USERS}
           currentUserId={currentUserId}
           selectedPingId={selectedPingId}
-          onSelectPing={handleSelectPing}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          onSelectPing={(id) => {
+            handleSelectPing(id)
+            // Close sidebar on mobile after selecting
+            if (window.innerWidth <= 768) {
+              setSidebarOpen(false)
+            }
+          }}
           onUpdatePing={handleUpdatePing}
           onDeletePing={handleDeletePing}
           onCleanUpPing={handleCleanUpPing}

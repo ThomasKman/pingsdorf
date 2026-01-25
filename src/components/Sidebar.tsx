@@ -10,6 +10,8 @@ interface SidebarProps {
   users: User[]
   currentUserId: string
   selectedPingId: string | null
+  isOpen: boolean
+  onClose: () => void
   onSelectPing: (id: string) => void
   onUpdatePing: (id: string, updates: Partial<Pick<Ping, 'name' | 'description' | 'image'>>) => void
   onDeletePing: (id: string) => void
@@ -29,7 +31,7 @@ interface UserSection {
   pings: Ping[]
 }
 
-export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, onSelectPing, onUpdatePing, onDeletePing, onCleanUpPing }: SidebarProps) {
+export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, isOpen, onClose, onSelectPing, onUpdatePing, onDeletePing, onCleanUpPing }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
@@ -293,10 +295,18 @@ export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, on
 
   return (
     <>
-      <aside className="sidebar">
+      {/* Mobile overlay backdrop */}
+      <div
+        className={`sidebar-overlay ${isOpen ? 'visible' : ''}`}
+        onClick={onClose}
+      />
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Pings</h2>
           <span className="ping-count">{activePings.length}</span>
+          <button className="sidebar-close" onClick={onClose} aria-label="Close sidebar">
+            ✕
+          </button>
         </div>
 
         {activePings.length === 0 && cleanedUpPings.length === 0 ? (

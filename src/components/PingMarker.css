@@ -286,3 +286,84 @@
     color: #333;
   }
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .ping-dot {
+    width: 24px;
+    height: 24px;
+    border-width: 4px;
+  }
+
+  .ping-pulse {
+    width: 24px;
+    height: 24px;
+  }
+
+  .ping-marker.placing .ping-dot {
+    width: 32px;
+    height: 32px;
+  }
+
+  .ping-placement-form {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    min-width: auto;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 1rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+  }
+
+  .ping-input,
+  .ping-textarea {
+    padding: 12px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  .ping-placement-buttons {
+    gap: 12px;
+  }
+
+  .ping-placement-buttons button {
+    padding: 12px 16px;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+
+  .ping-image-upload-btn {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  .ping-image-remove {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .ping-has-image {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) and (pointer: coarse) {
+  .ping-marker {
+    /* Larger touch target */
+    padding: 8px;
+    margin: -8px;
+  }
+
+  .ping-marker.placing {
+    cursor: default;
+  }
+}

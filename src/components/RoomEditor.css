@@ -278,3 +278,63 @@
     background-color: #e8e8e8;
   }
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .room-editor {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 60vh;
+    border-radius: 16px 16px 0 0;
+    border: none;
+    border-top: 1px solid #333;
+  }
+
+  .room-editor-header {
+    padding: 1rem;
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .room-editor-content {
+    padding: 1rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .new-room-form input[type="text"] {
+    padding: 0.75rem;
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+
+  .btn-draw,
+  .btn-cancel {
+    padding: 0.75rem 1rem;
+    min-height: 44px;
+  }
+
+  .room-item {
+    padding: 0.75rem;
+    min-height: 48px;
+  }
+
+  .room-actions {
+    opacity: 1;
+  }
+
+  .room-actions button {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 1rem;
+  }
+}
