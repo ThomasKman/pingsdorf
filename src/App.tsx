@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
+import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import { Sidebar } from './components/Sidebar'
 import { PingMarker } from './components/PingMarker'
 import { RoomOverlay } from './components/RoomOverlay'
@@ -13,13 +14,138 @@ import './App.css'
 
 const FLOOR_PLAN_URL = 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Sample_Floorplan.jpg'
 
+// Mobile-specific ping placement form component
+interface MobilePingFormProps {
+  ping: Ping
+  onUpdate: (updates: Partial<Pick<Ping, 'name' | 'description' | 'image'>>) => void
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+function MobilePingForm({ ping, onUpdate, onConfirm, onCancel }: MobilePingFormProps) {
+  const [name, setName] = useState(ping.name)
+  const [description, setDescription] = useState(ping.description)
+  const [image, setImage] = useState<string | undefined>(ping.image)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleConfirm = () => {
+    onUpdate({ name, description, image })
+    onConfirm()
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleConfirm()
+    } else if (e.key === 'Escape') {
+      onCancel()
+    }
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const result = event.target?.result as string
+      setImage(result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setImage(undefined)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="mobile-ping-form">
+      <div className="mobile-ping-form-header">
+        <span>Position the crosshair, then add details</span>
+      </div>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Name (e.g., Dirty socks)"
+        className="mobile-ping-input"
+        autoFocus
+      />
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Description (optional)"
+        className="mobile-ping-textarea"
+        rows={2}
+      />
+
+      <div className="mobile-ping-image-section">
+        {image ? (
+          <div className="mobile-ping-image-preview">
+            <img src={image} alt="Preview" />
+            <button
+              type="button"
+              className="mobile-ping-image-remove"
+              onClick={removeImage}
+              title="Remove image"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <label className="mobile-ping-image-upload">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              hidden
+            />
+            <span className="mobile-ping-image-upload-btn">📷 Add Photo</span>
+          </label>
+        )}
+      </div>
+
+      <div className="mobile-ping-buttons">
+        <button className="mobile-ping-confirm" onClick={handleConfirm}>
+          ✓ Add Ping
+        </button>
+        <button className="mobile-ping-cancel" onClick={onCancel}>
+          ✕
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [pings, setPings] = useState<Ping[]>([])
   const [selectedPingId, setSelectedPingId] = useState<string | null>(null)
   const [placingPingId, setPlacingPingId] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState(MOCK_USERS[0].id)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
+  const transformRef = useRef<ReactZoomPanPinchRef>(null)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Room state
   const [rooms, setRooms] = useState<Room[]>([])
@@ -41,6 +167,30 @@ function App() {
     setPings(prev => prev.map(ping => assignRoomToPing(ping)))
   }, [rooms, assignRoomToPing])
 
+  // Calculate position under the crosshair (center of map container)
+  const getCrosshairPosition = useCallback((): { x: number; y: number } | null => {
+    if (!imageRef.current || !mapContainerRef.current || !transformRef.current) {
+      return null
+    }
+
+    const containerRect = mapContainerRef.current.getBoundingClientRect()
+    const imageRect = imageRef.current.getBoundingClientRect()
+
+    // Get center of the container (where the crosshair is)
+    const centerX = containerRect.left + containerRect.width / 2
+    const centerY = containerRect.top + containerRect.height / 2
+
+    // Calculate position relative to the image
+    const x = ((centerX - imageRect.left) / imageRect.width) * 100
+    const y = ((centerY - imageRect.top) / imageRect.height) * 100
+
+    // Clamp to valid range
+    return {
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
+    }
+  }, [])
+
   const handleAddPing = () => {
     const newPing: Ping = {
       id: crypto.randomUUID(),
@@ -58,14 +208,24 @@ function App() {
   }
 
   const handleConfirmPing = useCallback(() => {
-    // Assign room to the ping when confirmed
-    if (placingPingId) {
+    // On mobile, update ping position to where the crosshair points
+    if (placingPingId && isMobile) {
+      const pos = getCrosshairPosition()
+      if (pos) {
+        setPings(prev => prev.map(ping =>
+          ping.id === placingPingId
+            ? assignRoomToPing({ ...ping, x: pos.x, y: pos.y })
+            : ping
+        ))
+      }
+    } else if (placingPingId) {
+      // Desktop: just assign room
       setPings(prev => prev.map(ping =>
         ping.id === placingPingId ? assignRoomToPing(ping) : ping
       ))
     }
     setPlacingPingId(null)
-  }, [placingPingId, assignRoomToPing])
+  }, [placingPingId, isMobile, getCrosshairPosition, assignRoomToPing])
 
   const handleCancelPing = useCallback(() => {
     if (placingPingId) {
@@ -197,13 +357,14 @@ function App() {
       </header>
 
       <div className="main-content">
-        <div className="map-container">
+        <div className="map-container" ref={mapContainerRef}>
           <TransformWrapper
+            ref={transformRef}
             initialScale={1}
             minScale={0.5}
             maxScale={4}
             centerOnInit={true}
-            panning={{ disabled: placingPingId !== null || isDrawingRoom }}
+            panning={{ disabled: (!isMobile && placingPingId !== null) || isDrawingRoom }}
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
@@ -247,31 +408,57 @@ function App() {
                       drawingPoints={drawingPoints}
                       onRoomClick={setEditingRoomId}
                     />
-                    {pings.filter(p => !p.cleanedUpAt).map(ping => (
-                      <PingMarker
-                        key={ping.id}
-                        ping={ping}
-                        userColor={MOCK_USERS.find(u => u.id === ping.userId)?.color}
-                        isSelected={ping.id === selectedPingId}
-                        isPlacing={ping.id === placingPingId}
-                        imageRef={imageRef}
-                        onClick={() => handleSelectPing(ping.id)}
-                        onDrag={(x, y) => handlePingDrag(ping.id, x, y)}
-                        onUpdate={(updates) => handleUpdatePing(ping.id, updates)}
-                        onConfirm={handleConfirmPing}
-                        onCancel={handleCancelPing}
-                      />
-                    ))}
+                    {pings.filter(p => !p.cleanedUpAt).map(ping => {
+                      // On mobile, don't render the ping marker while placing (use crosshair instead)
+                      if (isMobile && ping.id === placingPingId) {
+                        return null
+                      }
+                      return (
+                        <PingMarker
+                          key={ping.id}
+                          ping={ping}
+                          userColor={MOCK_USERS.find(u => u.id === ping.userId)?.color}
+                          isSelected={ping.id === selectedPingId}
+                          isPlacing={ping.id === placingPingId}
+                          imageRef={imageRef}
+                          onClick={() => handleSelectPing(ping.id)}
+                          onDrag={(x, y) => handlePingDrag(ping.id, x, y)}
+                          onUpdate={(updates) => handleUpdatePing(ping.id, updates)}
+                          onConfirm={handleConfirmPing}
+                          onCancel={handleCancelPing}
+                        />
+                      )
+                    })}
                   </div>
                 </TransformComponent>
               </>
             )}
           </TransformWrapper>
 
+          {/* Mobile crosshair for ping placement */}
+          {isMobile && placingPingId && (
+            <div className="mobile-crosshair">
+              <div className="crosshair-vertical" />
+              <div className="crosshair-horizontal" />
+              <div className="crosshair-center" />
+            </div>
+          )}
+
+          {/* Mobile placement form */}
+          {isMobile && placingPingId && (
+            <MobilePingForm
+              ping={pings.find(p => p.id === placingPingId)!}
+              onUpdate={(updates) => handleUpdatePing(placingPingId, updates)}
+              onConfirm={handleConfirmPing}
+              onCancel={handleCancelPing}
+            />
+          )}
+
           {showRoomEditor && (
             <RoomEditor
               rooms={rooms}
               isDrawing={isDrawingRoom}
+              drawingPointsCount={drawingPoints.length}
               editingRoomId={editingRoomId}
               onStartDrawing={handleStartDrawingRoom}
               onCancelDrawing={handleCancelDrawingRoom}

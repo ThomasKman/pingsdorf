@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Room } from '../types/Room'
 import { generateRoomColor } from '../utils/geometry'
 import './RoomEditor.css'
@@ -6,6 +6,7 @@ import './RoomEditor.css'
 interface RoomEditorProps {
   rooms: Room[]
   isDrawing: boolean
+  drawingPointsCount: number
   editingRoomId: string | null
   onStartDrawing: (name: string, color: string) => void
   onCancelDrawing: () => void
@@ -18,6 +19,7 @@ interface RoomEditorProps {
 export function RoomEditor({
   rooms,
   isDrawing,
+  drawingPointsCount,
   editingRoomId,
   onStartDrawing,
   onCancelDrawing,
@@ -30,6 +32,16 @@ export function RoomEditor({
   const [newRoomColor, setNewRoomColor] = useState(generateRoomColor())
   const [editingName, setEditingName] = useState<string | null>(null)
   const [editNameValue, setEditNameValue] = useState('')
+  const [isMinimized, setIsMinimized] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleStartDrawing = () => {
     if (!newRoomName.trim()) {
@@ -53,14 +65,40 @@ export function RoomEditor({
     setEditingName(null)
   }
 
+  // On mobile when drawing, show minimized view by default
+  const showMinimized = isMobile && isMinimized
+
   return (
-    <div className="room-editor">
+    <div className={`room-editor ${showMinimized ? 'minimized' : ''}`}>
       <div className="room-editor-header">
         <h3>Room Settings</h3>
-        <button className="close-btn" onClick={onClose} title="Close">✕</button>
+        <div className="room-editor-header-actions">
+          {isMobile && (
+            <button
+              className="minimize-btn"
+              onClick={() => setIsMinimized(!isMinimized)}
+              title={isMinimized ? 'Expand' : 'Minimize'}
+            >
+              {isMinimized ? '▲' : '▼'}
+            </button>
+          )}
+          <button className="close-btn" onClick={onClose} title="Close">✕</button>
+        </div>
       </div>
 
-      <div className="room-editor-content">
+      {/* Minimized drawing indicator for mobile */}
+      {showMinimized && isDrawing && (
+        <div className="minimized-drawing-info">
+          <span className="drawing-status">
+            Drawing: {drawingPointsCount} point{drawingPointsCount !== 1 ? 's' : ''}
+            {drawingPointsCount >= 3 && ' • Tap first point to close'}
+          </span>
+          <button className="btn-cancel-mini" onClick={onCancelDrawing}>Cancel</button>
+        </div>
+      )}
+
+      {!showMinimized && (
+        <div className="room-editor-content">
         {/* Add new room section */}
         <div className="new-room-section">
           <h4>Add New Room</h4>
@@ -159,7 +197,8 @@ export function RoomEditor({
             </ul>
           )}
         </div>
-      </div>
+        </div>
+      )}
     </div>
   )
 }
