@@ -25,11 +25,22 @@
   margin: 0.25rem 0 0 0;
 }
 
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
 .map-container {
   flex: 1;
   position: relative;
   background-color: #2a2a2a;
   overflow: hidden;
+}
+
+.floor-plan-container {
+  position: relative;
+  display: inline-block;
 }
 
 .map-controls {
