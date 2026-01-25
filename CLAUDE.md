@@ -6,70 +6,126 @@
 
 ## Current Project State
 
-This project is in **early-stage development** (initialized January 2026). The repository currently contains:
-- `README.md` - Project description
-- `.gitignore` - Comprehensive Node.js/TypeScript ignore patterns
-- No source code has been written yet
+This project is a **Vite + React + TypeScript** application (initialized January 2026). The basic scaffolding is complete and ready for feature development.
 
-## Intended Technology Stack
-
-Based on the project's `.gitignore` configuration, the expected technology stack includes:
+## Technology Stack
 
 ### Core Technologies
 - **Runtime:** Node.js
-- **Language:** TypeScript
-- **Package Manager:** npm or yarn
+- **Language:** TypeScript (~5.8.0)
+- **Package Manager:** npm
+- **Build Tool:** Vite 7.3.1
 
-### Frontend Framework (Likely)
-- Next.js, Nuxt.js, or Vue.js (all patterns are included in .gitignore)
-- Vite as a potential build tool
+### Frontend
+- **Framework:** React 19.2.3
+- **React DOM:** 19.2.3
 
 ### Development Tools
-- ESLint for code linting
-- Stylelint for CSS linting
-- Jest or similar for testing
+- **Linting:** ESLint 9.25.0 with TypeScript support
+- **Type Checking:** TypeScript with strict mode enabled
+- **Hot Module Replacement:** Via Vite + @vitejs/plugin-react
 
-### Map Functionality
-- Will require a mapping library (e.g., Leaflet, Mapbox GL, Google Maps API)
+### Future Additions (Recommended)
+- **Mapping Library:** Leaflet, Mapbox GL, or Google Maps API
+- **Testing:** Vitest (Vite-native) or Jest
+- **State Management:** React Context, Zustand, or similar (as needed)
 
-## Project Structure (Recommended)
-
-When building out this project, follow this suggested structure:
+## Project Structure
 
 ```
 pingsdorf/
 ├── src/
-│   ├── app/              # App router (Next.js) or pages
-│   ├── components/       # Reusable UI components
-│   ├── hooks/            # Custom React/Vue hooks
-│   ├── lib/              # Utility functions and helpers
-│   ├── types/            # TypeScript type definitions
-│   └── styles/           # Global styles and themes
-├── public/               # Static assets
-├── tests/                # Test files
-├── .env.example          # Environment variable template
+│   ├── main.tsx          # Application entry point
+│   ├── App.tsx           # Root React component
+│   ├── App.css           # Component-specific styles
+│   ├── index.css         # Global styles
+│   └── vite-env.d.ts     # Vite type definitions
+├── public/
+│   └── vite.svg          # Favicon
+├── index.html            # HTML entry point
 ├── package.json          # Dependencies and scripts
-├── tsconfig.json         # TypeScript configuration
-└── README.md             # Project documentation
+├── vite.config.ts        # Vite configuration
+├── tsconfig.json         # TypeScript config (references)
+├── tsconfig.app.json     # TypeScript config for app code
+├── tsconfig.node.json    # TypeScript config for Node files
+├── eslint.config.js      # ESLint flat config
+├── .gitignore            # Git ignore patterns
+├── README.md             # Project documentation
+└── CLAUDE.md             # This file
+```
+
+### Recommended Directory Additions
+
+As the project grows, add these directories to `src/`:
+
+```
+src/
+├── components/           # Reusable UI components
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility functions and helpers
+├── types/                # TypeScript type definitions
+├── features/             # Feature-specific modules
+│   ├── map/              # Map display and interaction
+│   ├── pins/             # Pin/marker management
+│   └── auth/             # Authentication (if needed)
+└── assets/               # Images, icons, etc.
+```
+
+## Commands Reference
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server (with HMR)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Lint code
+npm run lint
 ```
 
 ## Development Guidelines
 
 ### Code Style
-- Use TypeScript for all source files
-- Follow ESLint rules once configured
+- Use TypeScript for all source files (`.ts`, `.tsx`)
+- Follow ESLint rules (run `npm run lint` to check)
+- Use functional components with hooks
 - Use meaningful variable and function names
 - Keep components small and focused on a single responsibility
 
+### TypeScript Conventions
+- Strict mode is enabled - avoid `any` types
+- Define interfaces/types in separate files when reused
+- Use `type` for unions/intersections, `interface` for object shapes
+- Export types alongside components when relevant
+
+### React Patterns
+- Use functional components exclusively
+- Prefer React hooks for state and side effects
+- Keep state as close to where it's used as possible
+- Use React.memo() sparingly and only when profiling shows benefit
+
+### File Naming
+- React components: PascalCase (`MapView.tsx`, `PinMarker.tsx`)
+- Hooks: camelCase with `use` prefix (`useMapInteraction.ts`)
+- Utilities: camelCase (`formatDate.ts`, `validateInput.ts`)
+- Types: PascalCase (`MapTypes.ts`, `PinData.ts`)
+
 ### Git Workflow
-- Branch naming: Use descriptive branch names (e.g., `feature/map-component`, `fix/pin-placement`)
-- Commit messages: Write clear, concise commit messages describing what changed and why
+- Branch naming: Use descriptive names (e.g., `feature/map-component`, `fix/pin-placement`)
+- Commit messages: Write clear, concise messages describing what changed and why
 - Keep commits atomic and focused
 
 ### Environment Variables
 - Never commit `.env` files with sensitive data
 - Use `.env.example` as a template for required environment variables
-- Document all environment variables in this file or README
+- Access via `import.meta.env.VITE_*` in code
 
 ## Key Features to Implement
 
@@ -78,39 +134,21 @@ Based on the project description, core features should include:
 1. **Interactive Map Display**
    - Render a map of a home/space
    - Support zooming and panning
+   - Custom floor plan support (image overlay)
 
 2. **Item Pinging**
    - Allow users to place pins/markers on the map
    - Add descriptions to pins (what item, when placed)
+   - Visual indicators for pin status
 
 3. **User Notifications**
    - Notify the other user when items are pinged
    - Track ping history
+   - Mark items as "put away"
 
 4. **User Authentication** (if multi-user)
    - Account creation and login
    - Link accounts between partners
-
-## Commands Reference
-
-Once the project is set up, common commands will likely include:
-
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Run tests
-npm test
-
-# Lint code
-npm run lint
-```
 
 ## AI Assistant Instructions
 
@@ -119,10 +157,10 @@ When working on this codebase:
 1. **Before making changes:**
    - Read relevant files to understand existing code
    - Check for existing patterns and conventions
-   - Look at package.json for available scripts and dependencies
+   - Review `package.json` for available scripts and dependencies
 
 2. **When writing code:**
-   - Follow TypeScript best practices
+   - Follow TypeScript best practices (no `any`, proper typing)
    - Maintain consistency with existing code style
    - Keep functions and components small and testable
    - Add appropriate error handling
@@ -130,12 +168,13 @@ When working on this codebase:
 3. **When adding dependencies:**
    - Prefer well-maintained, popular packages
    - Check for existing similar dependencies before adding new ones
-   - Document why a dependency was added if not obvious
+   - Use `npm install <package>` for runtime deps
+   - Use `npm install -D <package>` for dev deps
 
-4. **Testing:**
-   - Write tests for new functionality
-   - Run existing tests before committing
-   - Ensure tests pass before pushing
+4. **Building and verification:**
+   - Run `npm run build` to check for TypeScript errors
+   - Run `npm run lint` to check for linting issues
+   - Test changes with `npm run dev` when possible
 
 5. **Documentation:**
    - Update README.md when adding major features
@@ -148,14 +187,15 @@ When working on this codebase:
 - Use environment variables for API keys and secrets
 - Implement proper authentication if storing user data
 - Follow OWASP guidelines for web application security
+- Use HTTPS in production
 
-## Getting Help
+## Useful Links
 
-- Project issues: Check GitHub Issues
-- Framework documentation: Refer to the chosen framework's official docs
-- TypeScript: https://www.typescriptlang.org/docs/
+- [Vite Documentation](https://vite.dev/guide/)
+- [React Documentation](https://react.dev/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 
 ---
 
 *Last updated: January 2026*
-*Project status: Initial setup - awaiting implementation*
+*Project status: Scaffolded - ready for feature development*
