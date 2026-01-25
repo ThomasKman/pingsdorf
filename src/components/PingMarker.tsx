@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import type { Ping } from '../types/Ping'
 import './PingMarker.css'
 
@@ -9,6 +9,7 @@ interface PingMarkerProps {
   imageRef: React.RefObject<HTMLImageElement | null>
   onClick: () => void
   onDrag: (x: number, y: number) => void
+  onUpdate: (updates: Partial<Pick<Ping, 'name' | 'description'>>) => void
   onConfirm: () => void
   onCancel: () => void
 }
@@ -20,13 +21,26 @@ export function PingMarker({
   imageRef,
   onClick,
   onDrag,
+  onUpdate,
   onConfirm,
   onCancel,
 }: PingMarkerProps) {
   const isDragging = useRef(false)
+  const [name, setName] = useState(ping.name)
+  const [description, setDescription] = useState(ping.description)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isPlacing && nameInputRef.current) {
+      nameInputRef.current.focus()
+    }
+  }, [isPlacing])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!isPlacing) return
+
+    // Don't start drag if clicking on the form
+    if ((e.target as HTMLElement).closest('.ping-placement-form')) return
 
     e.preventDefault()
     e.stopPropagation()
@@ -52,6 +66,20 @@ export function PingMarker({
     document.addEventListener('mouseup', handleMouseUp)
   }, [isPlacing, imageRef, onDrag])
 
+  const handleConfirm = () => {
+    onUpdate({ name, description })
+    onConfirm()
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleConfirm()
+    } else if (e.key === 'Escape') {
+      onCancel()
+    }
+  }
+
   return (
     <div
       className={`ping-marker ${isSelected ? 'selected' : ''} ${isPlacing ? 'placing' : ''}`}
@@ -72,27 +100,40 @@ export function PingMarker({
       <div className="ping-pulse" />
 
       {isPlacing && (
-        <div className="ping-placement-controls">
-          <button
-            className="ping-confirm"
-            onClick={(e) => {
-              e.stopPropagation()
-              onConfirm()
-            }}
-            title="Confirm placement"
-          >
-            ✓
-          </button>
-          <button
-            className="ping-cancel"
-            onClick={(e) => {
-              e.stopPropagation()
-              onCancel()
-            }}
-            title="Cancel"
-          >
-            ✕
-          </button>
+        <div className="ping-placement-form" onClick={(e) => e.stopPropagation()}>
+          <input
+            ref={nameInputRef}
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Name (e.g., Dirty socks)"
+            className="ping-input"
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Description (optional)"
+            className="ping-textarea"
+            rows={2}
+          />
+          <div className="ping-placement-buttons">
+            <button
+              className="ping-confirm"
+              onClick={handleConfirm}
+              title="Confirm (Enter)"
+            >
+              ✓ Add
+            </button>
+            <button
+              className="ping-cancel"
+              onClick={onCancel}
+              title="Cancel (Esc)"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
     </div>
