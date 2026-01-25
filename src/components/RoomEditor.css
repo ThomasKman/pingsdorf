@@ -1,0 +1,280 @@
+.room-editor {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 280px;
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+  max-height: calc(100% - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.room-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #333;
+}
+
+.room-editor-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #ff4757;
+}
+
+.room-editor-content {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.new-room-section,
+.rooms-list-section {
+  margin-bottom: 1.5rem;
+}
+
+.new-room-section h4,
+.rooms-list-section h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.new-room-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.new-room-form input[type="text"] {
+  padding: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background-color: #2a2a2a;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.new-room-form input[type="text"]:focus {
+  outline: none;
+  border-color: #2ed573;
+}
+
+.color-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-picker label {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.color-picker input[type="color"] {
+  width: 40px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+}
+
+.btn-draw {
+  padding: 0.6rem 1rem;
+  background-color: #2ed573;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-draw:hover {
+  background-color: #26c066;
+}
+
+.drawing-instructions {
+  padding: 0.75rem;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.drawing-instructions p {
+  margin: 0 0 0.5rem 0;
+}
+
+.drawing-instructions .red-dot {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.btn-cancel {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-cancel:hover {
+  background-color: #ff4757;
+}
+
+.no-rooms {
+  color: #666;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.rooms-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.room-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.room-item:hover {
+  background-color: #2a2a2a;
+}
+
+.room-item.selected {
+  background-color: #333;
+  outline: 1px solid #646cff;
+}
+
+.room-color-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.room-name {
+  flex: 1;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-item input[type="text"] {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #646cff;
+  border-radius: 4px;
+  background-color: #2a2a2a;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.room-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.room-item:hover .room-actions,
+.room-item.selected .room-actions {
+  opacity: 1;
+}
+
+.room-actions input[type="color"] {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+.room-actions button {
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.room-actions button:hover {
+  background-color: #444;
+}
+
+.room-actions .delete-btn:hover {
+  background-color: #ff4757;
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  .room-editor {
+    background-color: #fff;
+    border-color: #ddd;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .room-editor-header {
+    border-bottom-color: #ddd;
+  }
+
+  .new-room-form input[type="text"],
+  .room-item input[type="text"] {
+    background-color: #f5f5f5;
+    border-color: #ccc;
+    color: #333;
+  }
+
+  .drawing-instructions {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+
+  .room-item:hover {
+    background-color: #f0f0f0;
+  }
+
+  .room-item.selected {
+    background-color: #e8e8e8;
+  }
+}
