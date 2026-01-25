@@ -40,10 +40,17 @@ pingsdorf/
 │   ├── components/
 │   │   ├── PingMarker.tsx    # Ping marker with placement form
 │   │   ├── PingMarker.css
-│   │   ├── Sidebar.tsx       # Sidebar with ping list
-│   │   └── Sidebar.css
+│   │   ├── Sidebar.tsx       # Sidebar with ping list (grouped by room)
+│   │   ├── Sidebar.css
+│   │   ├── RoomOverlay.tsx   # SVG overlay for room boundaries
+│   │   ├── RoomOverlay.css
+│   │   ├── RoomEditor.tsx    # Panel for managing rooms
+│   │   └── RoomEditor.css
 │   ├── types/
-│   │   └── Ping.ts           # Ping interface definition
+│   │   ├── Ping.ts           # Ping interface definition
+│   │   └── Room.ts           # Room and Point interfaces
+│   ├── utils/
+│   │   └── geometry.ts       # Point-in-polygon detection
 │   ├── main.tsx              # Application entry point
 │   ├── App.tsx               # Root React component
 │   ├── App.css               # Main app styles
@@ -100,6 +107,14 @@ npm run lint
 - Delete pings
 - Selected ping details panel with full image
 
+### Room Management
+- Settings panel to define rooms on the floor plan
+- Draw room boundaries by clicking corners on the map
+- Pings automatically categorized by room (ray-casting algorithm)
+- Sidebar grouped by room with collapsible sections
+- "Other" category for pings outside defined rooms
+- Edit room names and colors
+
 ## Future Features (Planned)
 
 ### 1. Multi-User Support
@@ -110,18 +125,27 @@ npm run lint
 - Sidebar split into "Your Pings" and "Partner's Pings"
 - Optional ping history view
 
-### 2. Room Management
-- Settings panel to define rooms on the floor plan
-- Draw room boundaries on the map
-- Pings automatically categorized by room
-- Sidebar grouped by room
-- "Other" category for pings outside defined rooms
-
-### 3. User Authentication
+### 2. User Authentication
 - Login/signup flow
 - Account linking between partners
 - Session management
 - Profile settings
+
+### 3. Responsiveness / Mobile Layout
+- Mobile-friendly UI
+- Touch-optimized interactions
+- Responsive sidebar
+
+### 4. Docker Container Deployment
+- Dockerfile for production builds
+- Docker Compose configuration
+- Environment variable management
+
+### 5. Backend and Database
+- Consider separate project for backend
+- User data persistence
+- Real-time sync between users
+- API design
 
 ## Development Guidelines
 

@@ -8,7 +8,7 @@
 .ping-dot {
   width: 16px;
   height: 16px;
-  background-color: #ff4757;
+  background-color: var(--ping-color, #ff4757);
   border: 3px solid #fff;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -61,7 +61,7 @@
   transform: translate(-50%, -50%);
   width: 16px;
   height: 16px;
-  background-color: rgba(255, 71, 87, 0.4);
+  background-color: color-mix(in srgb, var(--ping-color, #ff4757) 40%, transparent);
   border-radius: 50%;
   animation: pulse 2s ease-out infinite;
   z-index: 1;

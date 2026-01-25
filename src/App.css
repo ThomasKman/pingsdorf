@@ -8,10 +8,21 @@
 
 .app-header {
   padding: 1rem;
-  text-align: center;
   background-color: #1a1a1a;
   border-bottom: 1px solid #333;
   flex-shrink: 0;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-title {
+  text-align: left;
 }
 
 .app-header h1 {

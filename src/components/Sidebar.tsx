@@ -1,15 +1,19 @@
 import { useState, useMemo } from 'react'
 import type { Ping } from '../types/Ping'
 import type { Room } from '../types/Room'
+import type { User } from '../types/User'
 import './Sidebar.css'
 
 interface SidebarProps {
   pings: Ping[]
   rooms: Room[]
+  users: User[]
+  currentUserId: string
   selectedPingId: string | null
   onSelectPing: (id: string) => void
   onUpdatePing: (id: string, updates: Partial<Pick<Ping, 'name' | 'description' | 'image'>>) => void
   onDeletePing: (id: string) => void
+  onCleanUpPing: (id: string) => void
 }
 
 interface PingGroup {
@@ -19,24 +23,70 @@ interface PingGroup {
   pings: Ping[]
 }
 
-export function Sidebar({ pings, rooms, selectedPingId, onSelectPing, onUpdatePing, onDeletePing }: SidebarProps) {
+interface UserSection {
+  user: User
+  isCurrentUser: boolean
+  pings: Ping[]
+}
+
+export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, onSelectPing, onUpdatePing, onDeletePing, onCleanUpPing }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['history']))
+  const [showHistory, setShowHistory] = useState(false)
 
   const selectedPing = pings.find(p => p.id === selectedPingId)
+  const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users])
 
-  // Group pings by room
-  const pingGroups = useMemo((): PingGroup[] => {
+  // Split pings into active and cleaned up
+  const activePings = useMemo(() => pings.filter(p => !p.cleanedUpAt), [pings])
+  const cleanedUpPings = useMemo(() =>
+    pings
+      .filter(p => p.cleanedUpAt)
+      .sort((a, b) => new Date(b.cleanedUpAt!).getTime() - new Date(a.cleanedUpAt!).getTime()),
+    [pings]
+  )
+
+  // Split active pings by user (current user first)
+  const userSections = useMemo((): UserSection[] => {
+    const sections: UserSection[] = []
+
+    // Current user's pings first
+    const currentUser = users.find(u => u.id === currentUserId)
+    if (currentUser) {
+      sections.push({
+        user: currentUser,
+        isCurrentUser: true,
+        pings: activePings.filter(p => p.userId === currentUserId),
+      })
+    }
+
+    // Other users' pings
+    users.filter(u => u.id !== currentUserId).forEach(user => {
+      const userPings = activePings.filter(p => p.userId === user.id)
+      if (userPings.length > 0) {
+        sections.push({
+          user,
+          isCurrentUser: false,
+          pings: userPings,
+        })
+      }
+    })
+
+    return sections
+  }, [activePings, users, currentUserId])
+
+  // Group pings by room (for a given set of pings)
+  const groupPingsByRoom = (pingList: Ping[]): PingGroup[] => {
     const groups: PingGroup[] = []
     const roomMap = new Map<string, Room>()
     rooms.forEach(room => roomMap.set(room.id, room))
 
     // Create groups for each room
     rooms.forEach(room => {
-      const roomPings = pings.filter(p => p.roomId === room.id)
+      const roomPings = pingList.filter(p => p.roomId === room.id)
       if (roomPings.length > 0) {
         groups.push({
           id: room.id,
@@ -48,7 +98,7 @@ export function Sidebar({ pings, rooms, selectedPingId, onSelectPing, onUpdatePi
     })
 
     // "Other" category for pings not in any room
-    const otherPings = pings.filter(p => !p.roomId || !roomMap.has(p.roomId))
+    const otherPings = pingList.filter(p => !p.roomId || !roomMap.has(p.roomId))
     if (otherPings.length > 0) {
       groups.push({
         id: 'other',
@@ -58,15 +108,15 @@ export function Sidebar({ pings, rooms, selectedPingId, onSelectPing, onUpdatePi
     }
 
     return groups
-  }, [pings, rooms])
+  }
 
-  const toggleGroup = (groupId: string) => {
-    setCollapsedGroups(prev => {
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => {
       const newSet = new Set(prev)
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId)
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId)
       } else {
-        newSet.add(groupId)
+        newSet.add(sectionId)
       }
       return newSet
     })
@@ -97,193 +147,224 @@ export function Sidebar({ pings, rooms, selectedPingId, onSelectPing, onUpdatePi
     setLightboxImage(null)
   }
 
+  // Render a single ping item
+  const renderPingItem = (ping: Ping, canEdit: boolean, isHistory: boolean = false) => (
+    <li
+      key={ping.id}
+      className={`ping-item ${selectedPingId === ping.id ? 'selected' : ''} ${isHistory ? 'history-item' : ''}`}
+      onClick={() => !isHistory && onSelectPing(ping.id)}
+    >
+      {editingId === ping.id ? (
+        <div className="ping-edit-form" onClick={e => e.stopPropagation()}>
+          <input
+            type="text"
+            value={editName}
+            onChange={e => setEditName(e.target.value)}
+            placeholder="Name"
+            autoFocus
+          />
+          <textarea
+            value={editDescription}
+            onChange={e => setEditDescription(e.target.value)}
+            placeholder="Description"
+            rows={2}
+          />
+          <div className="edit-actions">
+            <button className="btn-save" onClick={saveEdit}>Save</button>
+            <button className="btn-cancel" onClick={cancelEdit}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <span
+            className="ping-user-indicator"
+            style={{ backgroundColor: userMap.get(ping.userId)?.color || '#888' }}
+            title={userMap.get(ping.userId)?.name || 'Unknown'}
+          />
+          {ping.image && (
+            <div className="ping-thumbnail">
+              <img src={ping.image} alt="" />
+            </div>
+          )}
+          <div className="ping-info">
+            <span className="ping-name">
+              {ping.image && <span className="ping-has-photo">📷</span>}
+              {ping.name || 'Unnamed ping'}
+            </span>
+            {ping.description && (
+              <span className="ping-description">{ping.description}</span>
+            )}
+            {isHistory && ping.cleanedUpBy && ping.cleanedUpAt ? (
+              <span className="ping-cleanup-info">
+                Cleaned by {userMap.get(ping.cleanedUpBy)?.name || 'Unknown'} • {new Date(ping.cleanedUpAt).toLocaleString()}
+              </span>
+            ) : (
+              <span className="ping-time">
+                {new Date(ping.createdAt).toLocaleString()}
+              </span>
+            )}
+          </div>
+          {!isHistory && (
+            <div className="ping-actions">
+              <button
+                className="btn-cleanup"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onCleanUpPing(ping.id)
+                }}
+                title="Mark as cleaned up"
+              >
+                ✓
+              </button>
+              {canEdit && (
+                <>
+                  <button
+                    className="btn-edit"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      startEditing(ping)
+                    }}
+                    title="Edit"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeletePing(ping.id)
+                    }}
+                    title="Delete"
+                  >
+                    🗑️
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </li>
+  )
+
+  // Render pings (either flat or grouped by room)
+  const renderPingList = (pingList: Ping[], canEdit: boolean) => {
+    if (rooms.length === 0) {
+      // No rooms defined, show flat list
+      return (
+        <ul className="ping-list">
+          {pingList.map(ping => renderPingItem(ping, canEdit))}
+        </ul>
+      )
+    }
+
+    // Rooms defined, show grouped list
+    const groups = groupPingsByRoom(pingList)
+    return (
+      <div className="ping-groups">
+        {groups.map(group => (
+          <div key={group.id} className="ping-group room-group">
+            <div
+              className="ping-group-header room-header"
+              onClick={() => toggleSection(`room-${group.id}`)}
+            >
+              <span className="group-toggle">
+                {collapsedSections.has(`room-${group.id}`) ? '▶' : '▼'}
+              </span>
+              {group.color && (
+                <span
+                  className="group-color"
+                  style={{ backgroundColor: group.color }}
+                />
+              )}
+              <span className="group-name">{group.name}</span>
+              <span className="group-count">{group.pings.length}</span>
+            </div>
+            {!collapsedSections.has(`room-${group.id}`) && (
+              <ul className="ping-list">
+                {group.pings.map(ping => renderPingItem(ping, canEdit))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <>
       <aside className="sidebar">
         <div className="sidebar-header">
           <h2>Pings</h2>
-          <span className="ping-count">{pings.length}</span>
+          <span className="ping-count">{activePings.length}</span>
         </div>
 
-        {pings.length === 0 ? (
+        {activePings.length === 0 && cleanedUpPings.length === 0 ? (
           <div className="sidebar-empty">
             <p>No pings yet</p>
             <p className="hint">Click "Add Ping" to add one</p>
           </div>
-        ) : rooms.length === 0 ? (
-          // No rooms defined, show flat list
-          <ul className="ping-list">
-            {pings.map(ping => (
-              <li
-                key={ping.id}
-                className={`ping-item ${selectedPingId === ping.id ? 'selected' : ''}`}
-                onClick={() => onSelectPing(ping.id)}
-              >
-                {editingId === ping.id ? (
-                  <div className="ping-edit-form" onClick={e => e.stopPropagation()}>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={e => setEditName(e.target.value)}
-                      placeholder="Name"
-                      autoFocus
-                    />
-                    <textarea
-                      value={editDescription}
-                      onChange={e => setEditDescription(e.target.value)}
-                      placeholder="Description"
-                      rows={2}
-                    />
-                    <div className="edit-actions">
-                      <button className="btn-save" onClick={saveEdit}>Save</button>
-                      <button className="btn-cancel" onClick={cancelEdit}>Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {ping.image && (
-                      <div className="ping-thumbnail">
-                        <img src={ping.image} alt="" />
-                      </div>
-                    )}
-                    <div className="ping-info">
-                      <span className="ping-name">
-                        {ping.image && <span className="ping-has-photo">📷</span>}
-                        {ping.name || 'Unnamed ping'}
-                      </span>
-                      {ping.description && (
-                        <span className="ping-description">{ping.description}</span>
-                      )}
-                      <span className="ping-time">
-                        {new Date(ping.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="ping-actions">
-                      <button
-                        className="btn-edit"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          startEditing(ping)
-                        }}
-                        title="Edit"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className="btn-delete"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onDeletePing(ping.id)
-                        }}
-                        title="Delete"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
         ) : (
-          // Rooms defined, show grouped list
-          <div className="ping-groups">
-            {pingGroups.map(group => (
-              <div key={group.id} className="ping-group">
+          <>
+            {activePings.length === 0 ? (
+              <div className="sidebar-empty">
+                <p>All cleaned up!</p>
+                <p className="hint">Great job keeping things tidy</p>
+              </div>
+            ) : (
+              <div className="user-sections">
+                {userSections.map(section => (
+                  <div key={section.user.id} className="user-section">
+                    <div
+                      className="user-section-header"
+                      onClick={() => toggleSection(`user-${section.user.id}`)}
+                      style={{ '--user-color': section.user.color } as React.CSSProperties}
+                    >
+                      <span className="group-toggle">
+                        {collapsedSections.has(`user-${section.user.id}`) ? '▶' : '▼'}
+                      </span>
+                      <span className="user-avatar">{section.user.avatar}</span>
+                      <span className="user-section-name">
+                        {section.isCurrentUser ? 'Your Pings' : `${section.user.name}'s Pings`}
+                      </span>
+                      <span className="group-count">{section.pings.length}</span>
+                    </div>
+                    {!collapsedSections.has(`user-${section.user.id}`) && (
+                      section.pings.length > 0 ? (
+                        renderPingList(section.pings, section.isCurrentUser)
+                      ) : (
+                        <div className="section-empty">
+                          <p>No pings yet</p>
+                        </div>
+                      )
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* History section */}
+            {cleanedUpPings.length > 0 && (
+              <div className="history-section">
                 <div
-                  className="ping-group-header"
-                  onClick={() => toggleGroup(group.id)}
+                  className="history-header"
+                  onClick={() => setShowHistory(!showHistory)}
                 >
                   <span className="group-toggle">
-                    {collapsedGroups.has(group.id) ? '▶' : '▼'}
+                    {showHistory ? '▼' : '▶'}
                   </span>
-                  {group.color && (
-                    <span
-                      className="group-color"
-                      style={{ backgroundColor: group.color }}
-                    />
-                  )}
-                  <span className="group-name">{group.name}</span>
-                  <span className="group-count">{group.pings.length}</span>
+                  <span className="history-icon">📜</span>
+                  <span className="history-title">History</span>
+                  <span className="group-count">{cleanedUpPings.length}</span>
                 </div>
-                {!collapsedGroups.has(group.id) && (
-                  <ul className="ping-list">
-                    {group.pings.map(ping => (
-                      <li
-                        key={ping.id}
-                        className={`ping-item ${selectedPingId === ping.id ? 'selected' : ''}`}
-                        onClick={() => onSelectPing(ping.id)}
-                      >
-                        {editingId === ping.id ? (
-                          <div className="ping-edit-form" onClick={e => e.stopPropagation()}>
-                            <input
-                              type="text"
-                              value={editName}
-                              onChange={e => setEditName(e.target.value)}
-                              placeholder="Name"
-                              autoFocus
-                            />
-                            <textarea
-                              value={editDescription}
-                              onChange={e => setEditDescription(e.target.value)}
-                              placeholder="Description"
-                              rows={2}
-                            />
-                            <div className="edit-actions">
-                              <button className="btn-save" onClick={saveEdit}>Save</button>
-                              <button className="btn-cancel" onClick={cancelEdit}>Cancel</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            {ping.image && (
-                              <div className="ping-thumbnail">
-                                <img src={ping.image} alt="" />
-                              </div>
-                            )}
-                            <div className="ping-info">
-                              <span className="ping-name">
-                                {ping.image && <span className="ping-has-photo">📷</span>}
-                                {ping.name || 'Unnamed ping'}
-                              </span>
-                              {ping.description && (
-                                <span className="ping-description">{ping.description}</span>
-                              )}
-                              <span className="ping-time">
-                                {new Date(ping.createdAt).toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="ping-actions">
-                              <button
-                                className="btn-edit"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  startEditing(ping)
-                                }}
-                                title="Edit"
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                className="btn-delete"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onDeletePing(ping.id)
-                                }}
-                                title="Delete"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </li>
-                    ))}
+                {showHistory && (
+                  <ul className="ping-list history-list">
+                    {cleanedUpPings.map(ping => renderPingItem(ping, false, true))}
                   </ul>
                 )}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         {selectedPing && editingId !== selectedPing.id && (

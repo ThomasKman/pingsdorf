@@ -90,6 +90,75 @@
   font-size: 0.75rem;
 }
 
+/* User sections */
+.user-sections {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.user-section {
+  border-bottom: 2px solid #333;
+}
+
+.user-section:last-child {
+  border-bottom: none;
+}
+
+.user-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  background-color: #1f1f1f;
+  border-left: 3px solid var(--user-color, #646cff);
+  transition: background-color 0.2s;
+}
+
+.user-section-header:hover {
+  background-color: #252525;
+}
+
+.user-avatar {
+  font-size: 1.1rem;
+}
+
+.user-section-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.section-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.ping-user-indicator {
+  width: 4px;
+  height: 100%;
+  min-height: 32px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+}
+
+.room-group {
+  margin-left: 0.5rem;
+}
+
+.room-group .ping-group-header {
+  background-color: transparent;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.room-group .ping-list {
+  margin-left: 0.25rem;
+}
+
 .ping-group .ping-list {
   border-left: 3px solid #333;
   margin-left: 0.5rem;
@@ -197,6 +266,68 @@
 
 .btn-delete:hover {
   background-color: #ff4757 !important;
+}
+
+.btn-cleanup {
+  background-color: rgba(46, 213, 115, 0.2) !important;
+  color: #2ed573 !important;
+  font-weight: 600;
+}
+
+.btn-cleanup:hover {
+  background-color: #2ed573 !important;
+  color: #fff !important;
+}
+
+/* History section */
+.history-section {
+  border-top: 2px solid #333;
+  background-color: #151515;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  background-color: #1a1a1a;
+  transition: background-color 0.2s;
+}
+
+.history-header:hover {
+  background-color: #222;
+}
+
+.history-icon {
+  font-size: 1rem;
+}
+
+.history-title {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ping-item.history-item {
+  opacity: 0.7;
+  cursor: default;
+  background-color: #151515;
+}
+
+.ping-item.history-item:hover {
+  background-color: #1a1a1a;
+}
+
+.ping-cleanup-info {
+  font-size: 0.75rem;
+  color: #2ed573;
 }
 
 .ping-edit-form {
@@ -343,6 +474,18 @@
     border-bottom-color: #ddd;
   }
 
+  .user-section {
+    border-bottom-color: #ddd;
+  }
+
+  .user-section-header {
+    background-color: #eee;
+  }
+
+  .user-section-header:hover {
+    background-color: #e5e5e5;
+  }
+
   .ping-group {
     border-bottom-color: #ddd;
   }
@@ -390,6 +533,27 @@
   .selected-ping-details {
     background-color: #e8e8e8;
     border-top-color: #ddd;
+  }
+
+  .history-section {
+    background-color: #e8e8e8;
+    border-top-color: #ddd;
+  }
+
+  .history-header {
+    background-color: #eee;
+  }
+
+  .history-header:hover {
+    background-color: #e5e5e5;
+  }
+
+  .ping-item.history-item {
+    background-color: #e8e8e8;
+  }
+
+  .ping-item.history-item:hover {
+    background-color: #e0e0e0;
   }
 }
 
