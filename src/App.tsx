@@ -167,7 +167,7 @@ function App() {
     setPings(prev => prev.map(ping => assignRoomToPing(ping)))
   }, [rooms, assignRoomToPing])
 
-  // Calculate position under the crosshair (center of map container)
+  // Calculate position under the crosshair (top third of map container on mobile)
   const getCrosshairPosition = useCallback((): { x: number; y: number } | null => {
     if (!imageRef.current || !mapContainerRef.current || !transformRef.current) {
       return null
@@ -176,13 +176,13 @@ function App() {
     const containerRect = mapContainerRef.current.getBoundingClientRect()
     const imageRect = imageRef.current.getBoundingClientRect()
 
-    // Get center of the container (where the crosshair is)
-    const centerX = containerRect.left + containerRect.width / 2
-    const centerY = containerRect.top + containerRect.height / 2
+    // Get crosshair position (center X, but top third Y to avoid being behind the form)
+    const crosshairX = containerRect.left + containerRect.width / 2
+    const crosshairY = containerRect.top + containerRect.height * 0.3 // Top third
 
     // Calculate position relative to the image
-    const x = ((centerX - imageRect.left) / imageRect.width) * 100
-    const y = ((centerY - imageRect.top) / imageRect.height) * 100
+    const x = ((crosshairX - imageRect.left) / imageRect.width) * 100
+    const y = ((crosshairY - imageRect.top) / imageRect.height) * 100
 
     // Clamp to valid range
     return {
@@ -360,11 +360,11 @@ function App() {
         <div className="map-container" ref={mapContainerRef}>
           <TransformWrapper
             ref={transformRef}
-            initialScale={1}
-            minScale={0.5}
+            initialScale={isMobile ? 0.8 : 1}
+            minScale={0.3}
             maxScale={4}
             centerOnInit={true}
-            panning={{ disabled: (!isMobile && placingPingId !== null) || isDrawingRoom }}
+            panning={{ disabled: !isMobile && (placingPingId !== null || isDrawingRoom) }}
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
