@@ -31,8 +31,8 @@ export function RoomOverlay({
             fillOpacity={isEditing ? 0.3 : 0.15}
             stroke={room.color}
             strokeWidth={isEditing ? 0.5 : 0.3}
-            onClick={() => onRoomClick?.(room.id)}
-            style={{ cursor: isEditing ? 'pointer' : 'default' }}
+            onClick={() => isEditing && onRoomClick?.(room.id)}
+            style={{ cursor: isEditing ? 'pointer' : 'default', pointerEvents: isEditing ? 'auto' : 'none' }}
           />
           {/* Room label */}
           {room.points.length >= 3 && (
