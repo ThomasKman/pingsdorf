@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import type { Ping } from '../types/Ping'
 import type { Room } from '../types/Room'
 import type { User } from '../types/User'
@@ -10,6 +10,8 @@ interface SidebarProps {
   users: User[]
   currentUserId: string
   selectedPingId: string | null
+  isOpen: boolean
+  onClose: () => void
   onSelectPing: (id: string) => void
   onUpdatePing: (id: string, updates: Partial<Pick<Ping, 'name' | 'description' | 'image'>>) => void
   onDeletePing: (id: string) => void
@@ -29,7 +31,11 @@ interface UserSection {
   pings: Ping[]
 }
 
-export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, onSelectPing, onUpdatePing, onDeletePing, onCleanUpPing }: SidebarProps) {
+// Ping colors: own = blue, other = red
+const OWN_PING_COLOR = '#4a9eff'
+const OTHER_PING_COLOR = '#ff6b6b'
+
+export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, isOpen, onClose, onSelectPing, onUpdatePing, onDeletePing, onCleanUpPing }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
@@ -147,10 +153,46 @@ export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, on
     setLightboxImage(null)
   }
 
+  const sidebarRef = useRef<HTMLElement>(null)
+
+  // Expand sections containing the selected ping and scroll to it
+  const scrollToPing = useCallback((pingId: string) => {
+    const ping = pings.find(p => p.id === pingId)
+    if (!ping) return
+
+    // Expand user section containing the ping
+    const userSectionKey = `user-${ping.userId}`
+    // Expand room group containing the ping
+    const roomGroupKey = ping.roomId ? `room-${ping.roomId}` : 'room-other'
+
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(userSectionKey)
+      newSet.delete(roomGroupKey)
+      return newSet
+    })
+
+    // Scroll after DOM updates
+    requestAnimationFrame(() => {
+      const el = sidebarRef.current?.querySelector(`[data-ping-id="${pingId}"]`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    })
+  }, [pings])
+
+  // When selectedPingId changes and sidebar is open, scroll to it
+  useEffect(() => {
+    if (selectedPingId && isOpen) {
+      scrollToPing(selectedPingId)
+    }
+  }, [selectedPingId, isOpen, scrollToPing])
+
   // Render a single ping item
   const renderPingItem = (ping: Ping, canEdit: boolean, isHistory: boolean = false) => (
     <li
       key={ping.id}
+      data-ping-id={ping.id}
       className={`ping-item ${selectedPingId === ping.id ? 'selected' : ''} ${isHistory ? 'history-item' : ''}`}
       onClick={() => !isHistory && onSelectPing(ping.id)}
     >
@@ -178,7 +220,7 @@ export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, on
         <>
           <span
             className="ping-user-indicator"
-            style={{ backgroundColor: userMap.get(ping.userId)?.color || '#888' }}
+            style={{ backgroundColor: ping.userId === currentUserId ? OWN_PING_COLOR : OTHER_PING_COLOR }}
             title={userMap.get(ping.userId)?.name || 'Unknown'}
           />
           {ping.image && (
@@ -293,10 +335,18 @@ export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, on
 
   return (
     <>
-      <aside className="sidebar">
+      {/* Mobile overlay backdrop */}
+      <div
+        className={`sidebar-overlay ${isOpen ? 'visible' : ''}`}
+        onClick={onClose}
+      />
+      <aside ref={sidebarRef} className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Pings</h2>
           <span className="ping-count">{activePings.length}</span>
+          <button className="sidebar-close" onClick={onClose} aria-label="Close sidebar">
+            ✕
+          </button>
         </div>
 
         {activePings.length === 0 && cleanedUpPings.length === 0 ? (
@@ -318,7 +368,7 @@ export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, on
                     <div
                       className="user-section-header"
                       onClick={() => toggleSection(`user-${section.user.id}`)}
-                      style={{ '--user-color': section.user.color } as React.CSSProperties}
+                      style={{ '--user-color': section.isCurrentUser ? OWN_PING_COLOR : OTHER_PING_COLOR } as React.CSSProperties}
                     >
                       <span className="group-toggle">
                         {collapsedSections.has(`user-${section.user.id}`) ? '▶' : '▼'}

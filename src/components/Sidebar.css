@@ -1,3 +1,20 @@
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
 .sidebar {
   width: 280px;
   background-color: #1a1a1a;
@@ -12,7 +29,28 @@
   border-bottom: 1px solid #333;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sidebar-header h2 {
+  flex: 1;
+}
+
+.sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-close:hover {
+  background-color: #333;
+  color: #fff;
 }
 
 .sidebar-header h2 {
@@ -624,4 +662,129 @@
 .lightbox-close:hover {
   background-color: #ff4757;
   transform: scale(1.1);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-height: 70vh;
+    z-index: 100;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    border-left: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    border-top: 1px solid #333;
+  }
+
+  .sidebar.open {
+    transform: translateY(0);
+  }
+
+  .sidebar-close {
+    display: block;
+  }
+
+  .sidebar-header {
+    padding: 1rem;
+    position: relative;
+  }
+
+  .sidebar-header::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background-color: #555;
+    border-radius: 2px;
+  }
+
+  .ping-item {
+    padding: 1rem;
+    min-height: 60px; /* Touch-friendly */
+  }
+
+  .ping-actions {
+    opacity: 1; /* Always visible on mobile */
+    gap: 0.5rem;
+  }
+
+  .ping-actions button {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.1rem;
+  }
+
+  .btn-cleanup {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .user-section-header,
+  .ping-group-header,
+  .history-header {
+    min-height: 48px;
+    padding: 0.875rem 1rem;
+  }
+
+  .selected-ping-details {
+    padding: 1rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .lightbox {
+    padding: 1rem;
+  }
+
+  .lightbox-close {
+    top: -50px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .user-sections {
+    max-height: calc(70vh - 120px);
+    overflow-y: auto;
+  }
+
+  .history-list {
+    max-height: 200px;
+  }
+}
+
+/* Small mobile - adjust for smaller screens */
+@media (max-width: 480px) {
+  .sidebar {
+    max-height: 75vh;
+  }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) and (pointer: coarse) {
+  .ping-actions {
+    opacity: 1;
+  }
+
+  .ping-item:active {
+    background-color: #333;
+  }
+
+  .user-section-header:active,
+  .ping-group-header:active,
+  .history-header:active {
+    background-color: #2a2a2a;
+  }
 }
