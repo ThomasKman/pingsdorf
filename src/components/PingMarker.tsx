@@ -7,6 +7,7 @@ interface PingMarkerProps {
   userColor?: string
   isSelected: boolean
   isPlacing: boolean
+  hideForm?: boolean
   imageRef: React.RefObject<HTMLImageElement | null>
   onClick: () => void
   onDrag: (x: number, y: number) => void
@@ -20,6 +21,7 @@ export function PingMarker({
   userColor,
   isSelected,
   isPlacing,
+  hideForm,
   imageRef,
   onClick,
   onDrag,
@@ -164,7 +166,7 @@ export function PingMarker({
       </div>
       <div className="ping-pulse" />
 
-      {isPlacing && (
+      {isPlacing && !hideForm && (
         <div
           className="ping-placement-form"
           onClick={(e) => e.stopPropagation()}
