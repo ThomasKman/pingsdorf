@@ -145,7 +145,7 @@ function App() {
   const transformRef = useRef<ReactZoomPanPinchRef>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
-  // Map rotation (0, 90, 180, 270 degrees)
+  // Map rotation (0 or 90 degrees)
   const [mapRotation, setMapRotation] = useState(0)
 
   // Detect mobile viewport
@@ -561,6 +561,7 @@ function App() {
                       isEditing={showRoomEditor}
                       editingRoomId={editingRoomId}
                       drawingPoints={drawingPoints}
+                      mapRotation={mapRotation}
                       onRoomClick={setEditingRoomId}
                     />
                     {clusters.map(cluster => {
@@ -585,6 +586,7 @@ function App() {
                               isSelected={ping.id === selectedPingId}
                               isPlacing={ping.id === placingPingId}
                               hideForm={isMobile}
+                              mapRotation={mapRotation}
                               imageRef={imageRef}
                               onClick={() => {
                                 handleSelectPing(ping.id)
@@ -608,6 +610,7 @@ function App() {
                           style={{
                             left: `${cluster.centerX}%`,
                             top: `${cluster.centerY}%`,
+                            transform: `translate(-50%, -50%)${mapRotation ? ` rotate(${-mapRotation}deg)` : ''}`,
                           }}
                           onClick={(e) => {
                             e.stopPropagation()

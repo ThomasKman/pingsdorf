@@ -8,6 +8,7 @@ interface PingMarkerProps {
   isSelected: boolean
   isPlacing: boolean
   hideForm?: boolean
+  mapRotation?: number
   imageRef: React.RefObject<HTMLImageElement | null>
   onClick: () => void
   onDrag: (x: number, y: number) => void
@@ -22,6 +23,7 @@ export function PingMarker({
   isSelected,
   isPlacing,
   hideForm,
+  mapRotation = 0,
   imageRef,
   onClick,
   onDrag,
@@ -150,6 +152,7 @@ export function PingMarker({
         left: `${ping.x}%`,
         top: `${ping.y}%`,
         '--ping-color': userColor || '#ff6b6b',
+        transform: `translate(-50%, -50%)${mapRotation ? ` rotate(${-mapRotation}deg)` : ''}`,
       } as React.CSSProperties}
       onClick={(e) => {
         e.stopPropagation()
