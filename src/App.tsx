@@ -409,14 +409,14 @@ function App() {
         <div className="map-container" ref={mapContainerRef}>
           <TransformWrapper
             ref={transformRef}
-            initialScale={isMobile ? 0.8 : 1}
+            initialScale={isMobile ? 0.6 : 0.9}
             minScale={0.3}
             maxScale={4}
             centerOnInit={true}
             limitToBounds={false}
             panning={{ disabled: !isMobile && (placingPingId !== null || isDrawingRoom) }}
           >
-            {({ resetTransform }) => (
+            {({ centerView }) => (
               <>
                 <div className="map-controls">
                   <button
@@ -426,7 +426,7 @@ function App() {
                   >
                     + Add Ping
                   </button>
-                  <button onClick={() => resetTransform()}>Reset View</button>
+                  <button onClick={() => centerView(isMobile ? 0.6 : 0.9)}>Reset View</button>
                   <button
                     className="settings-btn"
                     onClick={() => setShowRoomEditor(!showRoomEditor)}
@@ -469,6 +469,7 @@ function App() {
                           userColor={MOCK_USERS.find(u => u.id === ping.userId)?.color}
                           isSelected={ping.id === selectedPingId}
                           isPlacing={ping.id === placingPingId}
+                          hideForm={isMobile}
                           imageRef={imageRef}
                           onClick={() => handleSelectPing(ping.id)}
                           onDrag={(x, y) => handlePingDrag(ping.id, x, y)}
