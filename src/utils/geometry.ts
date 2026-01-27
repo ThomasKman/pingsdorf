@@ -46,3 +46,52 @@ export function generateRoomColor(): string {
   ]
   return colors[Math.floor(Math.random() * colors.length)]
 }
+
+/**
+ * Convert screen coordinates to image-local percentage coordinates,
+ * accounting for CSS rotation on the image container.
+ *
+ * When the container is rotated via CSS `rotate(Ndeg)`,
+ * getBoundingClientRect() returns the axis-aligned bounding box in screen space.
+ * We need to inverse-rotate screen offsets back to the image's local coordinate system.
+ */
+export function screenToImagePercent(
+  clientX: number,
+  clientY: number,
+  imageEl: HTMLElement,
+  mapRotation: number
+): { x: number; y: number } {
+  const rect = imageEl.getBoundingClientRect()
+
+  if (!mapRotation) {
+    return {
+      x: Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)),
+      y: Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100)),
+    }
+  }
+
+  // Center of the image in screen space
+  const cx = rect.left + rect.width / 2
+  const cy = rect.top + rect.height / 2
+
+  // Offset from center in screen space
+  const dx = clientX - cx
+  const dy = clientY - cy
+
+  // Apply inverse rotation
+  const rad = (-mapRotation * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+  const ux = dx * cos - dy * sin
+  const uy = dx * sin + dy * cos
+
+  // Un-rotated image dimensions (swap back if rotated 90°/270°)
+  const isRotated = mapRotation === 90 || mapRotation === 270
+  const imgW = isRotated ? rect.height : rect.width
+  const imgH = isRotated ? rect.width : rect.height
+
+  return {
+    x: Math.max(0, Math.min(100, ((ux + imgW / 2) / imgW) * 100)),
+    y: Math.max(0, Math.min(100, ((uy + imgH / 2) / imgH) * 100)),
+  }
+}

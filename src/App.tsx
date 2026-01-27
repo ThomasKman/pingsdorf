@@ -9,7 +9,7 @@ import { UserSelector } from './components/UserSelector'
 import type { Ping } from './types/Ping'
 import type { Room, Point } from './types/Room'
 import { MOCK_USERS } from './types/User'
-import { findRoomForPoint } from './utils/geometry'
+import { findRoomForPoint, screenToImagePercent } from './utils/geometry'
 import './App.css'
 
 const FLOOR_PLAN_URL = 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Sample_Floorplan.jpg'
@@ -272,22 +272,13 @@ function App() {
     }
 
     const containerRect = mapContainerRef.current.getBoundingClientRect()
-    const imageRect = imageRef.current.getBoundingClientRect()
 
     // Get crosshair position (center X, but top third Y to avoid being behind the form)
     const crosshairX = containerRect.left + containerRect.width / 2
     const crosshairY = containerRect.top + containerRect.height * 0.3 // Top third
 
-    // Calculate position relative to the image
-    const x = ((crosshairX - imageRect.left) / imageRect.width) * 100
-    const y = ((crosshairY - imageRect.top) / imageRect.height) * 100
-
-    // Clamp to valid range
-    return {
-      x: Math.max(0, Math.min(100, x)),
-      y: Math.max(0, Math.min(100, y)),
-    }
-  }, [])
+    return screenToImagePercent(crosshairX, crosshairY, imageRef.current, mapRotation)
+  }, [mapRotation])
 
   // Double-tap detection for mobile
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null)
@@ -304,13 +295,9 @@ function App() {
         Math.abs(touch.clientY - lastTap.y) < 30) {
       // Double tap detected - add ping at this location
       e.preventDefault()
-      const rect = imageRef.current.getBoundingClientRect()
-      const x = ((touch.clientX - rect.left) / rect.width) * 100
-      const y = ((touch.clientY - rect.top) / rect.height) * 100
-
-      // Clamp to valid range
-      const clampedX = Math.max(0, Math.min(100, x))
-      const clampedY = Math.max(0, Math.min(100, y))
+      const { x: clampedX, y: clampedY } = screenToImagePercent(
+        touch.clientX, touch.clientY, imageRef.current, mapRotation
+      )
 
       const newPing: Ping = {
         id: crypto.randomUUID(),
@@ -330,7 +317,7 @@ function App() {
     } else {
       lastTapRef.current = { time: now, x: touch.clientX, y: touch.clientY }
     }
-  }, [isMobile, placingPingId, isDrawingRoom, currentUserId])
+  }, [isMobile, placingPingId, isDrawingRoom, currentUserId, mapRotation])
 
   const handleAddPing = () => {
     const newPing: Ping = {
@@ -439,9 +426,7 @@ function App() {
   const handleMapClick = useCallback((e: React.MouseEvent) => {
     if (!isDrawingRoom || !imageRef.current) return
 
-    const rect = imageRef.current.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
+    const { x, y } = screenToImagePercent(e.clientX, e.clientY, imageRef.current, mapRotation)
 
     // Check if clicking on first point to close the polygon
     if (drawingPoints.length >= 3) {
@@ -463,7 +448,7 @@ function App() {
 
     // Add new point
     setDrawingPoints(prev => [...prev, { x, y }])
-  }, [isDrawingRoom, drawingPoints, drawingRoomName, drawingRoomColor, handleCancelDrawingRoom])
+  }, [isDrawingRoom, drawingPoints, drawingRoomName, drawingRoomColor, mapRotation, handleCancelDrawingRoom])
 
   const handleUpdateRoom = useCallback((roomId: string, updates: Partial<Pick<Room, 'name' | 'color'>>) => {
     setRooms(prev => prev.map(room =>
