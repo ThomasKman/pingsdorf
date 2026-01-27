@@ -416,7 +416,7 @@ function App() {
             limitToBounds={false}
             panning={{ disabled: !isMobile && (placingPingId !== null || isDrawingRoom) }}
           >
-            {() => (
+            {({ resetTransform }) => (
               <>
                 <div className="map-controls">
                   <button
@@ -426,6 +426,7 @@ function App() {
                   >
                     + Add Ping
                   </button>
+                  <button onClick={() => resetTransform()}>Reset View</button>
                   <button
                     className="settings-btn"
                     onClick={() => setShowRoomEditor(!showRoomEditor)}
@@ -456,8 +457,9 @@ function App() {
                       onRoomClick={setEditingRoomId}
                     />
                     {pings.filter(p => !p.cleanedUpAt).map(ping => {
-                      // On mobile, don't render the ping marker while placing (use crosshair instead)
-                      if (isMobile && ping.id === placingPingId) {
+                      // On mobile crosshair mode, don't render the marker (crosshair is used instead)
+                      // But for double-tap (directPlacement), show the dot immediately
+                      if (isMobile && ping.id === placingPingId && !directPlacement) {
                         return null
                       }
                       return (
