@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import { Sidebar } from './components/Sidebar'
@@ -140,6 +140,7 @@ function App() {
   const [currentUserId, setCurrentUserId] = useState(MOCK_USERS[0].id)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [fitScale, setFitScale] = useState(0.5)
   const imageRef = useRef<HTMLImageElement>(null)
   const transformRef = useRef<ReactZoomPanPinchRef>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -151,6 +152,26 @@ function App() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Calculate scale to fit entire image in the container
+  const calculateFitScale = useCallback(() => {
+    if (!imageRef.current || !mapContainerRef.current) return
+    const container = mapContainerRef.current.getBoundingClientRect()
+    const img = imageRef.current
+    const scaleX = container.width / img.naturalWidth
+    const scaleY = container.height / img.naturalHeight
+    const scale = Math.min(scaleX, scaleY) * 0.95 // slight padding
+    setFitScale(scale)
+    // Center after computing
+    setTimeout(() => transformRef.current?.centerView(scale), 50)
+  }, [])
+
+  const handleImageLoad = useCallback(() => {
+    calculateFitScale()
+  }, [calculateFitScale])
+
+  // Cluster state for overlapping pings
+  const [spreadClusterId, setSpreadClusterId] = useState<string | null>(null)
 
   // Room state
   const [rooms, setRooms] = useState<Room[]>([])
@@ -171,6 +192,59 @@ function App() {
   useEffect(() => {
     setPings(prev => prev.map(ping => assignRoomToPing(ping)))
   }, [rooms, assignRoomToPing])
+
+  // Cluster nearby pings
+  const CLUSTER_THRESHOLD = 4 // percentage distance to consider overlapping
+  interface PingCluster {
+    id: string
+    pings: Ping[]
+    centerX: number
+    centerY: number
+  }
+
+  const activePings = useMemo(() => pings.filter(p => !p.cleanedUpAt), [pings])
+
+  const clusters = useMemo((): PingCluster[] => {
+    const result: PingCluster[] = []
+    const assigned = new Set<string>()
+
+    for (const ping of activePings) {
+      if (assigned.has(ping.id)) continue
+      if (ping.id === placingPingId) {
+        // Don't cluster the ping being placed
+        result.push({ id: ping.id, pings: [ping], centerX: ping.x, centerY: ping.y })
+        assigned.add(ping.id)
+        continue
+      }
+
+      const cluster: Ping[] = [ping]
+      assigned.add(ping.id)
+
+      for (const other of activePings) {
+        if (assigned.has(other.id) || other.id === placingPingId) continue
+        const dist = Math.sqrt((ping.x - other.x) ** 2 + (ping.y - other.y) ** 2)
+        if (dist < CLUSTER_THRESHOLD) {
+          cluster.push(other)
+          assigned.add(other.id)
+        }
+      }
+
+      const cx = cluster.reduce((s, p) => s + p.x, 0) / cluster.length
+      const cy = cluster.reduce((s, p) => s + p.y, 0) / cluster.length
+      result.push({ id: cluster.map(p => p.id).join('-'), pings: cluster, centerX: cx, centerY: cy })
+    }
+    return result
+  }, [activePings, placingPingId])
+
+  // Compute spread positions for a cluster (fan out in a circle)
+  const getSpreadPosition = (index: number, total: number, cx: number, cy: number): { x: number; y: number } => {
+    const radius = 5 // percentage spread radius
+    const angle = (2 * Math.PI * index) / total - Math.PI / 2
+    return {
+      x: cx + radius * Math.cos(angle),
+      y: cy + radius * Math.sin(angle),
+    }
+  }
 
   // Calculate position under the crosshair (top third of map container on mobile)
   const getCrosshairPosition = useCallback((): { x: number; y: number } | null => {
@@ -417,8 +491,8 @@ function App() {
         <div className="map-container" ref={mapContainerRef}>
           <TransformWrapper
             ref={transformRef}
-            initialScale={isMobile ? 0.6 : 0.9}
-            minScale={0.3}
+            initialScale={fitScale}
+            minScale={0.1}
             maxScale={4}
             centerOnInit={true}
             limitToBounds={false}
@@ -434,7 +508,7 @@ function App() {
                   >
                     + Add Ping
                   </button>
-                  <button onClick={() => centerView(isMobile ? 0.6 : 0.9)}>Reset View</button>
+                  <button onClick={() => centerView(fitScale)}>Reset View</button>
                   <button
                     className="settings-btn"
                     onClick={() => setShowRoomEditor(!showRoomEditor)}
@@ -449,13 +523,14 @@ function App() {
                     height: '100%',
                   }}
                 >
-                  <div className="floor-plan-container" onClick={handleMapClick} onTouchStart={handleDoubleTapPing}>
+                  <div className="floor-plan-container" onClick={(e) => { handleMapClick(e); setSpreadClusterId(null) }} onTouchStart={handleDoubleTapPing}>
                     <img
                       ref={imageRef}
                       src={FLOOR_PLAN_URL}
                       alt="Floor Plan"
                       className="floor-plan-image"
                       draggable={false}
+                      onLoad={handleImageLoad}
                     />
                     <RoomOverlay
                       rooms={rooms}
@@ -464,27 +539,61 @@ function App() {
                       drawingPoints={drawingPoints}
                       onRoomClick={setEditingRoomId}
                     />
-                    {pings.filter(p => !p.cleanedUpAt).map(ping => {
-                      // On mobile crosshair mode, don't render the marker (crosshair is used instead)
-                      // But for double-tap (directPlacement), show the dot immediately
-                      if (isMobile && ping.id === placingPingId && !directPlacement) {
-                        return null
+                    {clusters.map(cluster => {
+                      const isSpread = spreadClusterId === cluster.id
+
+                      // Single ping or spread cluster: render individual markers
+                      if (cluster.pings.length === 1 || isSpread) {
+                        return cluster.pings.map((ping, i) => {
+                          // On mobile crosshair mode, don't render
+                          if (isMobile && ping.id === placingPingId && !directPlacement) {
+                            return null
+                          }
+                          // If spread, use offset positions
+                          const displayPing = isSpread && cluster.pings.length > 1
+                            ? { ...ping, ...getSpreadPosition(i, cluster.pings.length, cluster.centerX, cluster.centerY) }
+                            : ping
+                          return (
+                            <PingMarker
+                              key={ping.id}
+                              ping={displayPing}
+                              userColor={ping.userId === currentUserId ? OWN_PING_COLOR : OTHER_PING_COLOR}
+                              isSelected={ping.id === selectedPingId}
+                              isPlacing={ping.id === placingPingId}
+                              hideForm={isMobile}
+                              imageRef={imageRef}
+                              onClick={() => {
+                                handleSelectPing(ping.id)
+                                // Collapse spread after selecting
+                                if (isSpread) setSpreadClusterId(null)
+                              }}
+                              onDrag={(x, y) => handlePingDrag(ping.id, x, y)}
+                              onUpdate={(updates) => handleUpdatePing(ping.id, updates)}
+                              onConfirm={handleConfirmPing}
+                              onCancel={handleCancelPing}
+                            />
+                          )
+                        })
                       }
+
+                      // Multi-ping cluster: render cluster marker
                       return (
-                        <PingMarker
-                          key={ping.id}
-                          ping={ping}
-                          userColor={ping.userId === currentUserId ? OWN_PING_COLOR : OTHER_PING_COLOR}
-                          isSelected={ping.id === selectedPingId}
-                          isPlacing={ping.id === placingPingId}
-                          hideForm={isMobile}
-                          imageRef={imageRef}
-                          onClick={() => handleSelectPing(ping.id)}
-                          onDrag={(x, y) => handlePingDrag(ping.id, x, y)}
-                          onUpdate={(updates) => handleUpdatePing(ping.id, updates)}
-                          onConfirm={handleConfirmPing}
-                          onCancel={handleCancelPing}
-                        />
+                        <div
+                          key={cluster.id}
+                          className="ping-cluster"
+                          style={{
+                            left: `${cluster.centerX}%`,
+                            top: `${cluster.centerY}%`,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSpreadClusterId(cluster.id)
+                          }}
+                          title={`${cluster.pings.length} pings`}
+                        >
+                          <div className="cluster-dot" />
+                          <span className="cluster-count">{cluster.pings.length}</span>
+                        </div>
                       )
                     })}
                   </div>
