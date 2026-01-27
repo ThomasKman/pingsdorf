@@ -6,6 +6,7 @@ interface RoomOverlayProps {
   isEditing: boolean
   editingRoomId: string | null
   drawingPoints: Point[]
+  mapRotation?: number
   onRoomClick?: (roomId: string) => void
 }
 
@@ -14,6 +15,7 @@ export function RoomOverlay({
   isEditing,
   editingRoomId,
   drawingPoints,
+  mapRotation = 0,
   onRoomClick,
 }: RoomOverlayProps) {
   const pointsToPolyline = (points: Point[]): string => {
@@ -35,16 +37,21 @@ export function RoomOverlay({
             style={{ cursor: isEditing ? 'pointer' : 'default', pointerEvents: isEditing ? 'auto' : 'none' }}
           />
           {/* Room label */}
-          {room.points.length >= 3 && (
-            <text
-              x={room.points.reduce((sum, p) => sum + p.x, 0) / room.points.length}
-              y={room.points.reduce((sum, p) => sum + p.y, 0) / room.points.length}
-              className="room-label"
-              fill={room.color}
-            >
-              {room.name}
-            </text>
-          )}
+          {room.points.length >= 3 && (() => {
+            const cx = room.points.reduce((sum, p) => sum + p.x, 0) / room.points.length
+            const cy = room.points.reduce((sum, p) => sum + p.y, 0) / room.points.length
+            return (
+              <text
+                x={cx}
+                y={cy}
+                className="room-label"
+                fill={room.color}
+                transform={mapRotation ? `rotate(${-mapRotation}, ${cx}, ${cy})` : undefined}
+              >
+                {room.name}
+              </text>
+            )
+          })()}
         </g>
       ))}
 

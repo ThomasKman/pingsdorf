@@ -143,7 +143,7 @@ export function RoomEditor({
         <div className="map-rotation-section">
           <h4>Map Orientation</h4>
           <div className="rotation-buttons">
-            {[0, 90, 180, 270].map(deg => (
+            {[0, 90].map(deg => (
               <button
                 key={deg}
                 className={`rotation-btn ${mapRotation === deg ? 'active' : ''}`}
