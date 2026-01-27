@@ -132,6 +132,7 @@ function App() {
   const [pings, setPings] = useState<Ping[]>([])
   const [selectedPingId, setSelectedPingId] = useState<string | null>(null)
   const [placingPingId, setPlacingPingId] = useState<string | null>(null)
+  const [directPlacement, setDirectPlacement] = useState(false) // true when placed via double-tap
   const [currentUserId, setCurrentUserId] = useState(MOCK_USERS[0].id)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -191,6 +192,49 @@ function App() {
     }
   }, [])
 
+  // Double-tap detection for mobile
+  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null)
+
+  const handleDoubleTapPing = useCallback((e: React.TouchEvent) => {
+    if (!isMobile || placingPingId || isDrawingRoom || !imageRef.current) return
+
+    const touch = e.touches[0] || e.changedTouches[0]
+    const now = Date.now()
+    const lastTap = lastTapRef.current
+
+    if (lastTap && now - lastTap.time < 300 &&
+        Math.abs(touch.clientX - lastTap.x) < 30 &&
+        Math.abs(touch.clientY - lastTap.y) < 30) {
+      // Double tap detected - add ping at this location
+      e.preventDefault()
+      const rect = imageRef.current.getBoundingClientRect()
+      const x = ((touch.clientX - rect.left) / rect.width) * 100
+      const y = ((touch.clientY - rect.top) / rect.height) * 100
+
+      // Clamp to valid range
+      const clampedX = Math.max(0, Math.min(100, x))
+      const clampedY = Math.max(0, Math.min(100, y))
+
+      const newPing: Ping = {
+        id: crypto.randomUUID(),
+        name: '',
+        description: '',
+        x: clampedX,
+        y: clampedY,
+        userId: currentUserId,
+        createdAt: new Date(),
+      }
+
+      setPings(prev => [...prev, newPing])
+      setPlacingPingId(newPing.id)
+      setSelectedPingId(newPing.id)
+      setDirectPlacement(true)
+      lastTapRef.current = null
+    } else {
+      lastTapRef.current = { time: now, x: touch.clientX, y: touch.clientY }
+    }
+  }, [isMobile, placingPingId, isDrawingRoom, currentUserId])
+
   const handleAddPing = () => {
     const newPing: Ping = {
       id: crypto.randomUUID(),
@@ -205,33 +249,38 @@ function App() {
     setPings(prev => [...prev, newPing])
     setPlacingPingId(newPing.id)
     setSelectedPingId(newPing.id)
+    setDirectPlacement(false)
   }
 
   const handleConfirmPing = useCallback(() => {
-    // On mobile, update ping position to where the crosshair points
-    if (placingPingId && isMobile) {
-      const pos = getCrosshairPosition()
-      if (pos) {
+    if (placingPingId) {
+      // On mobile crosshair mode (not double-tap), update position from crosshair
+      if (isMobile && !directPlacement) {
+        const pos = getCrosshairPosition()
+        if (pos) {
+          setPings(prev => prev.map(ping =>
+            ping.id === placingPingId
+              ? assignRoomToPing({ ...ping, x: pos.x, y: pos.y })
+              : ping
+          ))
+        }
+      } else {
+        // Desktop or direct placement: just assign room at current position
         setPings(prev => prev.map(ping =>
-          ping.id === placingPingId
-            ? assignRoomToPing({ ...ping, x: pos.x, y: pos.y })
-            : ping
+          ping.id === placingPingId ? assignRoomToPing(ping) : ping
         ))
       }
-    } else if (placingPingId) {
-      // Desktop: just assign room
-      setPings(prev => prev.map(ping =>
-        ping.id === placingPingId ? assignRoomToPing(ping) : ping
-      ))
     }
     setPlacingPingId(null)
-  }, [placingPingId, isMobile, getCrosshairPosition, assignRoomToPing])
+    setDirectPlacement(false)
+  }, [placingPingId, isMobile, directPlacement, getCrosshairPosition, assignRoomToPing])
 
   const handleCancelPing = useCallback(() => {
     if (placingPingId) {
       setPings(prev => prev.filter(p => p.id !== placingPingId))
       setPlacingPingId(null)
       setSelectedPingId(null)
+      setDirectPlacement(false)
     }
   }, [placingPingId])
 
@@ -364,6 +413,7 @@ function App() {
             minScale={0.3}
             maxScale={4}
             centerOnInit={true}
+            limitToBounds={false}
             panning={{ disabled: !isMobile && (placingPingId !== null || isDrawingRoom) }}
           >
             {() => (
@@ -390,7 +440,7 @@ function App() {
                     height: '100%',
                   }}
                 >
-                  <div className="floor-plan-container" onClick={handleMapClick}>
+                  <div className="floor-plan-container" onClick={handleMapClick} onTouchStart={handleDoubleTapPing}>
                     <img
                       ref={imageRef}
                       src={FLOOR_PLAN_URL}
@@ -432,8 +482,8 @@ function App() {
             )}
           </TransformWrapper>
 
-          {/* Mobile crosshair for ping placement */}
-          {isMobile && placingPingId && (
+          {/* Mobile crosshair for ping placement (not shown for double-tap) */}
+          {isMobile && placingPingId && !directPlacement && (
             <div className="mobile-crosshair">
               <div className="crosshair-vertical" />
               <div className="crosshair-horizontal" />
