@@ -34,26 +34,6 @@
 
 .sidebar-header h2 {
   flex: 1;
-}
-
-.sidebar-close {
-  display: none;
-  background: none;
-  border: none;
-  color: #888;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  transition: background-color 0.2s, color 0.2s;
-}
-
-.sidebar-close:hover {
-  background-color: #333;
-  color: #fff;
-}
-
-.sidebar-header h2 {
   margin: 0;
   font-size: 1.2rem;
 }
@@ -691,13 +671,16 @@
     transform: translateY(0);
   }
 
-  .sidebar-close {
-    display: block;
-  }
-
   .sidebar-header {
     padding: 1rem;
+    padding-top: 1.25rem;
     position: relative;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .sidebar-header:active {
+    background-color: rgba(255, 255, 255, 0.05);
   }
 
   .sidebar-header::before {
