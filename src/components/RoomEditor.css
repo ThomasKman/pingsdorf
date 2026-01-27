@@ -187,6 +187,48 @@
   background-color: #ff4757;
 }
 
+/* Map rotation */
+.map-rotation-section {
+  margin-bottom: 1.5rem;
+}
+
+.map-rotation-section h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rotation-buttons {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.rotation-btn {
+  flex: 1;
+  padding: 0.5rem 0.4rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  color: #ccc;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.rotation-btn:hover {
+  background-color: #333;
+  border-color: #646cff;
+}
+
+.rotation-btn.active {
+  background-color: #646cff;
+  border-color: #646cff;
+  color: #fff;
+  font-weight: 600;
+}
+
 .no-rooms {
   color: #666;
   font-size: 0.85rem;

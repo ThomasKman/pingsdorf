@@ -341,12 +341,9 @@ export function Sidebar({ pings, rooms, users, currentUserId, selectedPingId, is
         onClick={onClose}
       />
       <aside ref={sidebarRef} className={`sidebar ${isOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
+        <div className="sidebar-header" onClick={onClose}>
           <h2>Pings</h2>
           <span className="ping-count">{activePings.length}</span>
-          <button className="sidebar-close" onClick={onClose} aria-label="Close sidebar">
-            ✕
-          </button>
         </div>
 
         {activePings.length === 0 && cleanedUpPings.length === 0 ? (

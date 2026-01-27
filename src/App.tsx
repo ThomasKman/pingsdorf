@@ -145,6 +145,9 @@ function App() {
   const transformRef = useRef<ReactZoomPanPinchRef>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
+  // Map rotation (0, 90, 180, 270 degrees)
+  const [mapRotation, setMapRotation] = useState(0)
+
   // Detect mobile viewport
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768)
@@ -158,17 +161,33 @@ function App() {
     if (!imageRef.current || !mapContainerRef.current) return
     const container = mapContainerRef.current.getBoundingClientRect()
     const img = imageRef.current
-    const scaleX = container.width / img.naturalWidth
-    const scaleY = container.height / img.naturalHeight
+    // At 90/270 degrees, width and height are swapped
+    const isRotated = mapRotation === 90 || mapRotation === 270
+    const imgW = isRotated ? img.naturalHeight : img.naturalWidth
+    const imgH = isRotated ? img.naturalWidth : img.naturalHeight
+    const scaleX = container.width / imgW
+    const scaleY = container.height / imgH
     const scale = Math.min(scaleX, scaleY) * 0.95 // slight padding
     setFitScale(scale)
     // Center after computing
     setTimeout(() => transformRef.current?.centerView(scale), 50)
-  }, [])
+  }, [mapRotation])
 
   const handleImageLoad = useCallback(() => {
     calculateFitScale()
   }, [calculateFitScale])
+
+  // Recalculate fit when rotation changes
+  useEffect(() => {
+    if (imageRef.current) {
+      // Delay to let CSS transform apply
+      setTimeout(() => calculateFitScale(), 100)
+    }
+  }, [mapRotation, calculateFitScale])
+
+  const handleRotateMap = useCallback((degrees: number) => {
+    setMapRotation(degrees)
+  }, [])
 
   // Cluster state for overlapping pings
   const [spreadClusterId, setSpreadClusterId] = useState<string | null>(null)
@@ -523,7 +542,12 @@ function App() {
                     height: '100%',
                   }}
                 >
-                  <div className="floor-plan-container" onClick={(e) => { handleMapClick(e); setSpreadClusterId(null) }} onTouchStart={handleDoubleTapPing}>
+                  <div
+                    className="floor-plan-container"
+                    style={{ transform: mapRotation ? `rotate(${mapRotation}deg)` : undefined }}
+                    onClick={(e) => { handleMapClick(e); setSpreadClusterId(null) }}
+                    onTouchStart={handleDoubleTapPing}
+                  >
                     <img
                       ref={imageRef}
                       src={FLOOR_PLAN_URL}
@@ -627,6 +651,8 @@ function App() {
               isDrawing={isDrawingRoom}
               drawingPointsCount={drawingPoints.length}
               editingRoomId={editingRoomId}
+              mapRotation={mapRotation}
+              onRotateMap={handleRotateMap}
               onStartDrawing={handleStartDrawingRoom}
               onCancelDrawing={handleCancelDrawingRoom}
               onSelectRoom={setEditingRoomId}

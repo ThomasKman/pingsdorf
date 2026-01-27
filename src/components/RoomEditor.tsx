@@ -8,6 +8,8 @@ interface RoomEditorProps {
   isDrawing: boolean
   drawingPointsCount: number
   editingRoomId: string | null
+  mapRotation: number
+  onRotateMap: (degrees: number) => void
   onStartDrawing: (name: string, color: string) => void
   onCancelDrawing: () => void
   onSelectRoom: (roomId: string | null) => void
@@ -21,6 +23,8 @@ export function RoomEditor({
   isDrawing,
   drawingPointsCount,
   editingRoomId,
+  mapRotation,
+  onRotateMap,
   onStartDrawing,
   onCancelDrawing,
   onSelectRoom,
@@ -133,6 +137,22 @@ export function RoomEditor({
               </button>
             </div>
           )}
+        </div>
+
+        {/* Map rotation */}
+        <div className="map-rotation-section">
+          <h4>Map Orientation</h4>
+          <div className="rotation-buttons">
+            {[0, 90, 180, 270].map(deg => (
+              <button
+                key={deg}
+                className={`rotation-btn ${mapRotation === deg ? 'active' : ''}`}
+                onClick={() => onRotateMap(deg)}
+              >
+                {deg === 0 ? 'Default' : `${deg}°`}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Existing rooms list */}
