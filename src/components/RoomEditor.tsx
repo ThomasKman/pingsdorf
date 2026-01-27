@@ -47,6 +47,13 @@ export function RoomEditor({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Re-maximize when drawing finishes on mobile
+  useEffect(() => {
+    if (!isDrawing && isMobile) {
+      setIsMinimized(false)
+    }
+  }, [isDrawing, isMobile])
+
   const handleStartDrawing = () => {
     if (!newRoomName.trim()) {
       alert('Please enter a room name')
