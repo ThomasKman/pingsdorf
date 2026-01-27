@@ -14,6 +14,10 @@ import './App.css'
 
 const FLOOR_PLAN_URL = 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Sample_Floorplan.jpg'
 
+// Ping colors: own = blue, other = red
+const OWN_PING_COLOR = '#4a9eff'
+const OTHER_PING_COLOR = '#ff6b6b'
+
 // Mobile-specific ping placement form component
 interface MobilePingFormProps {
   ping: Ping
@@ -470,7 +474,7 @@ function App() {
                         <PingMarker
                           key={ping.id}
                           ping={ping}
-                          userColor={MOCK_USERS.find(u => u.id === ping.userId)?.color}
+                          userColor={ping.userId === currentUserId ? OWN_PING_COLOR : OTHER_PING_COLOR}
                           isSelected={ping.id === selectedPingId}
                           isPlacing={ping.id === placingPingId}
                           hideForm={isMobile}
