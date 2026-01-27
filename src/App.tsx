@@ -9,7 +9,7 @@ import { UserSelector } from './components/UserSelector'
 import type { Ping } from './types/Ping'
 import type { Room, Point } from './types/Room'
 import { MOCK_USERS } from './types/User'
-import { findRoomForPoint } from './utils/geometry'
+import { findRoomForPoint, screenToImagePercent } from './utils/geometry'
 import './App.css'
 
 const FLOOR_PLAN_URL = 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Sample_Floorplan.jpg'
@@ -145,6 +145,9 @@ function App() {
   const transformRef = useRef<ReactZoomPanPinchRef>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
+  // Map rotation (0 or 90 degrees)
+  const [mapRotation, setMapRotation] = useState(0)
+
   // Detect mobile viewport
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768)
@@ -158,17 +161,33 @@ function App() {
     if (!imageRef.current || !mapContainerRef.current) return
     const container = mapContainerRef.current.getBoundingClientRect()
     const img = imageRef.current
-    const scaleX = container.width / img.naturalWidth
-    const scaleY = container.height / img.naturalHeight
+    // At 90/270 degrees, width and height are swapped
+    const isRotated = mapRotation === 90 || mapRotation === 270
+    const imgW = isRotated ? img.naturalHeight : img.naturalWidth
+    const imgH = isRotated ? img.naturalWidth : img.naturalHeight
+    const scaleX = container.width / imgW
+    const scaleY = container.height / imgH
     const scale = Math.min(scaleX, scaleY) * 0.95 // slight padding
     setFitScale(scale)
     // Center after computing
     setTimeout(() => transformRef.current?.centerView(scale), 50)
-  }, [])
+  }, [mapRotation])
 
   const handleImageLoad = useCallback(() => {
     calculateFitScale()
   }, [calculateFitScale])
+
+  // Recalculate fit when rotation changes
+  useEffect(() => {
+    if (imageRef.current) {
+      // Delay to let CSS transform apply
+      setTimeout(() => calculateFitScale(), 100)
+    }
+  }, [mapRotation, calculateFitScale])
+
+  const handleRotateMap = useCallback((degrees: number) => {
+    setMapRotation(degrees)
+  }, [])
 
   // Cluster state for overlapping pings
   const [spreadClusterId, setSpreadClusterId] = useState<string | null>(null)
@@ -253,22 +272,13 @@ function App() {
     }
 
     const containerRect = mapContainerRef.current.getBoundingClientRect()
-    const imageRect = imageRef.current.getBoundingClientRect()
 
     // Get crosshair position (center X, but top third Y to avoid being behind the form)
     const crosshairX = containerRect.left + containerRect.width / 2
     const crosshairY = containerRect.top + containerRect.height * 0.3 // Top third
 
-    // Calculate position relative to the image
-    const x = ((crosshairX - imageRect.left) / imageRect.width) * 100
-    const y = ((crosshairY - imageRect.top) / imageRect.height) * 100
-
-    // Clamp to valid range
-    return {
-      x: Math.max(0, Math.min(100, x)),
-      y: Math.max(0, Math.min(100, y)),
-    }
-  }, [])
+    return screenToImagePercent(crosshairX, crosshairY, imageRef.current, mapRotation)
+  }, [mapRotation])
 
   // Double-tap detection for mobile
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null)
@@ -285,13 +295,9 @@ function App() {
         Math.abs(touch.clientY - lastTap.y) < 30) {
       // Double tap detected - add ping at this location
       e.preventDefault()
-      const rect = imageRef.current.getBoundingClientRect()
-      const x = ((touch.clientX - rect.left) / rect.width) * 100
-      const y = ((touch.clientY - rect.top) / rect.height) * 100
-
-      // Clamp to valid range
-      const clampedX = Math.max(0, Math.min(100, x))
-      const clampedY = Math.max(0, Math.min(100, y))
+      const { x: clampedX, y: clampedY } = screenToImagePercent(
+        touch.clientX, touch.clientY, imageRef.current, mapRotation
+      )
 
       const newPing: Ping = {
         id: crypto.randomUUID(),
@@ -311,7 +317,7 @@ function App() {
     } else {
       lastTapRef.current = { time: now, x: touch.clientX, y: touch.clientY }
     }
-  }, [isMobile, placingPingId, isDrawingRoom, currentUserId])
+  }, [isMobile, placingPingId, isDrawingRoom, currentUserId, mapRotation])
 
   const handleAddPing = () => {
     const newPing: Ping = {
@@ -420,9 +426,7 @@ function App() {
   const handleMapClick = useCallback((e: React.MouseEvent) => {
     if (!isDrawingRoom || !imageRef.current) return
 
-    const rect = imageRef.current.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
+    const { x, y } = screenToImagePercent(e.clientX, e.clientY, imageRef.current, mapRotation)
 
     // Check if clicking on first point to close the polygon
     if (drawingPoints.length >= 3) {
@@ -444,7 +448,7 @@ function App() {
 
     // Add new point
     setDrawingPoints(prev => [...prev, { x, y }])
-  }, [isDrawingRoom, drawingPoints, drawingRoomName, drawingRoomColor, handleCancelDrawingRoom])
+  }, [isDrawingRoom, drawingPoints, drawingRoomName, drawingRoomColor, mapRotation, handleCancelDrawingRoom])
 
   const handleUpdateRoom = useCallback((roomId: string, updates: Partial<Pick<Room, 'name' | 'color'>>) => {
     setRooms(prev => prev.map(room =>
@@ -523,7 +527,12 @@ function App() {
                     height: '100%',
                   }}
                 >
-                  <div className="floor-plan-container" onClick={(e) => { handleMapClick(e); setSpreadClusterId(null) }} onTouchStart={handleDoubleTapPing}>
+                  <div
+                    className="floor-plan-container"
+                    style={{ transform: mapRotation ? `rotate(${mapRotation}deg)` : undefined }}
+                    onClick={(e) => { handleMapClick(e); setSpreadClusterId(null) }}
+                    onTouchStart={handleDoubleTapPing}
+                  >
                     <img
                       ref={imageRef}
                       src={FLOOR_PLAN_URL}
@@ -537,6 +546,7 @@ function App() {
                       isEditing={showRoomEditor}
                       editingRoomId={editingRoomId}
                       drawingPoints={drawingPoints}
+                      mapRotation={mapRotation}
                       onRoomClick={setEditingRoomId}
                     />
                     {clusters.map(cluster => {
@@ -561,6 +571,7 @@ function App() {
                               isSelected={ping.id === selectedPingId}
                               isPlacing={ping.id === placingPingId}
                               hideForm={isMobile}
+                              mapRotation={mapRotation}
                               imageRef={imageRef}
                               onClick={() => {
                                 handleSelectPing(ping.id)
@@ -584,6 +595,7 @@ function App() {
                           style={{
                             left: `${cluster.centerX}%`,
                             top: `${cluster.centerY}%`,
+                            transform: `translate(-50%, -50%)${mapRotation ? ` rotate(${-mapRotation}deg)` : ''}`,
                           }}
                           onClick={(e) => {
                             e.stopPropagation()
@@ -627,6 +639,8 @@ function App() {
               isDrawing={isDrawingRoom}
               drawingPointsCount={drawingPoints.length}
               editingRoomId={editingRoomId}
+              mapRotation={mapRotation}
+              onRotateMap={handleRotateMap}
               onStartDrawing={handleStartDrawingRoom}
               onCancelDrawing={handleCancelDrawingRoom}
               onSelectRoom={setEditingRoomId}

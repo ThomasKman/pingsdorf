@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { Ping } from '../types/Ping'
+import { screenToImagePercent } from '../utils/geometry'
 import './PingMarker.css'
 
 interface PingMarkerProps {
@@ -8,6 +9,7 @@ interface PingMarkerProps {
   isSelected: boolean
   isPlacing: boolean
   hideForm?: boolean
+  mapRotation?: number
   imageRef: React.RefObject<HTMLImageElement | null>
   onClick: () => void
   onDrag: (x: number, y: number) => void
@@ -22,6 +24,7 @@ export function PingMarker({
   isSelected,
   isPlacing,
   hideForm,
+  mapRotation = 0,
   imageRef,
   onClick,
   onDrag,
@@ -55,10 +58,7 @@ export function PingMarker({
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isDragging.current || !imageRef.current) return
 
-      const rect = imageRef.current.getBoundingClientRect()
-      const x = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100))
-      const y = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100))
-
+      const { x, y } = screenToImagePercent(moveEvent.clientX, moveEvent.clientY, imageRef.current, mapRotation)
       onDrag(x, y)
     }
 
@@ -70,7 +70,7 @@ export function PingMarker({
 
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
-  }, [isPlacing, imageRef, onDrag])
+  }, [isPlacing, imageRef, onDrag, mapRotation])
 
   // Touch support for mobile
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -87,10 +87,7 @@ export function PingMarker({
       moveEvent.preventDefault() // Prevent scrolling while dragging
 
       const touch = moveEvent.touches[0]
-      const rect = imageRef.current.getBoundingClientRect()
-      const x = Math.max(0, Math.min(100, ((touch.clientX - rect.left) / rect.width) * 100))
-      const y = Math.max(0, Math.min(100, ((touch.clientY - rect.top) / rect.height) * 100))
-
+      const { x, y } = screenToImagePercent(touch.clientX, touch.clientY, imageRef.current, mapRotation)
       onDrag(x, y)
     }
 
@@ -102,7 +99,7 @@ export function PingMarker({
 
     document.addEventListener('touchmove', handleTouchMove, { passive: false })
     document.addEventListener('touchend', handleTouchEnd)
-  }, [isPlacing, imageRef, onDrag])
+  }, [isPlacing, imageRef, onDrag, mapRotation])
 
   const handleConfirm = () => {
     onUpdate({ name, description, image })
@@ -150,6 +147,7 @@ export function PingMarker({
         left: `${ping.x}%`,
         top: `${ping.y}%`,
         '--ping-color': userColor || '#ff6b6b',
+        transform: `translate(-50%, -50%)${mapRotation ? ` rotate(${-mapRotation}deg)` : ''}`,
       } as React.CSSProperties}
       onClick={(e) => {
         e.stopPropagation()
