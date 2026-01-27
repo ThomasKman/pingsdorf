@@ -293,6 +293,10 @@ function App() {
   const handleSelectPing = useCallback((id: string) => {
     if (!placingPingId) {
       setSelectedPingId(id)
+      // On mobile, open the sidebar to show ping details
+      if (window.innerWidth <= 768) {
+        setSidebarOpen(true)
+      }
     }
   }, [placingPingId])
 
