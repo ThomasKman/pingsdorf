@@ -1,13 +1,18 @@
 import { useCallback, useState } from 'react'
 import type { Point, Room } from '../types/Room'
 
+export interface UseRoomsOptions {
+  /** Optional initial rooms (e.g. hydrated from persistence). */
+  initialRooms?: Room[]
+}
+
 /**
  * Manages the rooms list and the "drawing a new room" state machine.
  * UI integration (where to compute click coordinates, when to close the
  * polygon) is left to the caller.
  */
-export function useRooms() {
-  const [rooms, setRooms] = useState<Room[]>([])
+export function useRooms(options: UseRoomsOptions = {}) {
+  const [rooms, setRooms] = useState<Room[]>(() => options.initialRooms ?? [])
   const [isDrawingRoom, setIsDrawingRoom] = useState(false)
   const [drawingRoomName, setDrawingRoomName] = useState('')
   const [drawingRoomColor, setDrawingRoomColor] = useState('')

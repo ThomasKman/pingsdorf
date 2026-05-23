@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Ping } from '../types/Ping'
 import type { Room } from '../types/Room'
 import { findRoomForPoint } from '../utils/geometry'
@@ -15,13 +15,26 @@ export interface StartPlacingOptions {
   direct?: boolean
 }
 
+export interface UsePingsOptions {
+  /**
+   * Optional initial pings. The caller is responsible for ensuring any
+   * `roomId`s in this list are consistent with the `rooms` argument at
+   * mount — the hook will NOT recompute them on the first render.
+   */
+  initialPings?: Ping[]
+}
+
 /**
  * Owns the pings list plus the selection / placement state machine.
  * Pings are auto-assigned to rooms via point-in-polygon whenever rooms change
- * or a ping is confirmed.
+ * after mount, or when a ping is confirmed.
  */
-export function usePings(currentUserId: string, rooms: Room[]) {
-  const [pings, setPings] = useState<Ping[]>([])
+export function usePings(
+  currentUserId: string,
+  rooms: Room[],
+  options: UsePingsOptions = {}
+) {
+  const [pings, setPings] = useState<Ping[]>(() => options.initialPings ?? [])
   const [selectedPingId, setSelectedPingId] = useState<string | null>(null)
   const [placingPingId, setPlacingPingId] = useState<string | null>(null)
   const [directPlacement, setDirectPlacement] = useState(false)
@@ -34,10 +47,29 @@ export function usePings(currentUserId: string, rooms: Room[]) {
     [rooms]
   )
 
-  // Recalculate room assignments when rooms change
+  // Recalculate room assignments when rooms change *after* mount.
+  // Skipping the first run avoids two issues:
+  //   1. trusting caller-provided initialPings to already be consistent
+  //      (prevents wiping roomIds on hydration order races)
+  //   2. avoiding a redundant identity churn on the empty default state
+  const isFirstRoomEffect = useRef(true)
   useEffect(() => {
-    setPings(prev => prev.map(ping => assignRoomToPing(ping)))
-  }, [rooms, assignRoomToPing])
+    if (isFirstRoomEffect.current) {
+      isFirstRoomEffect.current = false
+      return
+    }
+    setPings(prev => {
+      let changed = false
+      const next = prev.map(ping => {
+        const room = findRoomForPoint({ x: ping.x, y: ping.y }, rooms)
+        const newRoomId = room?.id
+        if (ping.roomId === newRoomId) return ping
+        changed = true
+        return { ...ping, roomId: newRoomId }
+      })
+      return changed ? next : prev
+    })
+  }, [rooms])
 
   const startPlacing = useCallback(
     (opts: StartPlacingOptions = {}): string => {
