@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { Sidebar } from './components/Sidebar'
 import { PingMarker } from './components/PingMarker'
@@ -13,6 +13,7 @@ import { useMobileViewport } from './hooks/useMobileViewport'
 import { useMapView } from './hooks/useMapView'
 import { useRooms } from './hooks/useRooms'
 import { usePings } from './hooks/usePings'
+import { loadAppState, saveAppState } from './utils/storage'
 import './App.css'
 
 const FLOOR_PLAN_URL = 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Sample_Floorplan.jpg'
@@ -30,6 +31,9 @@ const POLYGON_CLOSE_THRESHOLD = 3
 // Double-tap detection window
 const DOUBLE_TAP_MS = 300
 const DOUBLE_TAP_PX = 30
+// Debounce delay for persisting state to localStorage (ms). Short enough to
+// survive a quick tab close, long enough to coalesce rapid drag updates.
+const PERSIST_DEBOUNCE_MS = 250
 
 interface PingCluster {
   id: string
@@ -57,6 +61,11 @@ function App() {
   const [showRoomEditor, setShowRoomEditor] = useState(false)
   const [spreadClusterId, setSpreadClusterId] = useState<string | null>(null)
 
+  // Load persisted state once. Lazy initializer keeps this off the render path
+  // on subsequent renders. Rooms are passed in before pings so usePings's
+  // first-render guard sees the correct rooms list.
+  const [initialState] = useState(() => loadAppState())
+
   const isMobile = useMobileViewport()
   const {
     imageRef,
@@ -80,7 +89,7 @@ function App() {
     finishDrawing,
     updateRoom,
     deleteRoom,
-  } = useRooms()
+  } = useRooms({ initialRooms: initialState.rooms })
 
   const {
     pings,
@@ -95,7 +104,29 @@ function App() {
     updatePing,
     deletePing,
     cleanUpPing,
-  } = usePings(currentUserId, rooms)
+  } = usePings(currentUserId, rooms, { initialPings: initialState.pings })
+
+  // Persist pings + rooms whenever they change, debounced to coalesce rapid
+  // updates (e.g. dragging a ping). Initial-hydration write is harmless: it
+  // just re-saves what we just loaded.
+  // A ref tracks the latest state so the beforeunload flush below can read it
+  // without the listener being recreated on every state change.
+  const latestStateRef = useRef({ pings, rooms })
+  useEffect(() => {
+    latestStateRef.current = { pings, rooms }
+    const handle = setTimeout(() => {
+      saveAppState({ pings, rooms })
+    }, PERSIST_DEBOUNCE_MS)
+    return () => clearTimeout(handle)
+  }, [pings, rooms])
+
+  // Flush any pending save before the tab closes so we don't lose updates
+  // made within the debounce window.
+  useEffect(() => {
+    const flush = () => saveAppState(latestStateRef.current)
+    window.addEventListener('beforeunload', flush)
+    return () => window.removeEventListener('beforeunload', flush)
+  }, [])
 
   // ---------- Cluster computation ----------
   const activePings = useMemo(() => pings.filter(p => !p.cleanedUpAt), [pings])
