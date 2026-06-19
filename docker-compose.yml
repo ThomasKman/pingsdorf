@@ -1,0 +1,29 @@
+# docker-compose.yml
+#
+# Quick start on your Ugreen NAS:
+#   1. Copy this whole repo (or just this file + the built image) to a folder.
+#   2. Run: `docker compose up -d --build`
+#   3. Open http://<nas-ip>:8080
+#
+# To pin a published image instead of building locally, replace the `build:`
+# block with `image: ghcr.io/<you>/pingsdorf:latest`.
+
+services:
+  pingsdorf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pingsdorf:latest
+    container_name: pingsdorf
+    restart: unless-stopped
+    ports:
+      # host:container — change the left side if 8080 is taken on the NAS.
+      - "8080:8080"
+    # The static SPA holds no state today, so no volumes are needed.
+    # When a backend lands, add a `db` service and a `data:` volume here.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

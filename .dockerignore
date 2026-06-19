@@ -1,0 +1,47 @@
+# Node / build artefacts
+node_modules
+dist
+coverage
+.vite
+.cache
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Git / VCS
+.git
+.gitignore
+.gitattributes
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Env files — never bake secrets into the image
+.env
+.env.*
+!.env.example
+
+# Test files don't need to ship in the build context
+**/*.test.ts
+**/*.test.tsx
+src/test
+
+# Docker meta (don't recurse into ourselves)
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# Docs
+README.md
+DOCKER.md
+CLAUDE.md
+LICENSE
