@@ -10,9 +10,10 @@ import or reference this file rather than duplicating its contents.
 
 **Pingsdorf** is a Vite + React + TypeScript web app for "pinging" items on a floor plan
 that a significant other forgot to put away. Pings have a position, optional photo,
-and are auto-categorised into user-defined rooms (point-in-polygon).
+and are auto-categorised into user-defined rooms (point-in-polygon). State is persisted
+to `localStorage` so pings/rooms survive a page refresh.
 
-- **Status:** core features implemented, no backend yet, all state in memory.
+- **Status:** core features implemented, no backend yet.
 - **Audience:** the project owner (Thomas) and a partner — multi-user is mocked client-side.
 
 ## 2. Tech Stack
@@ -24,6 +25,7 @@ and are auto-categorised into user-defined rooms (point-in-polygon).
 | Build | Vite 7.3 |
 | Pan/zoom | `react-zoom-pan-pinch` |
 | Lint | ESLint 9 flat config + `typescript-eslint` |
+| Persistence | `localStorage` (versioned schema, see `src/utils/storage.ts`) |
 | Package mgr | npm |
 
 No backend, no router, no state library, no test runner *yet* — see "Planned" below.
@@ -32,10 +34,14 @@ No backend, no router, no state library, no test runner *yet* — see "Planned" 
 
 ```
 src/
-├── components/         # PingMarker, Sidebar, RoomOverlay, RoomEditor, UserSelector
+├── components/         # PingMarker, Sidebar, RoomOverlay, RoomEditor,
+│                       # UserSelector, MobilePingForm
+├── hooks/              # usePings, useRooms, useMapView, useMobileViewport
 ├── types/              # Ping, Room, User, Point — interface definitions
-├── utils/              # geometry.ts (point-in-polygon, screen<->image conversions)
-├── App.tsx             # root component (currently very large — see "Known smells")
+├── utils/
+│   ├── geometry.ts     # point-in-polygon, screen<->image conversions
+│   └── storage.ts      # versioned localStorage load/save with Date revival
+├── App.tsx             # orchestrator — wires hooks, renders the map
 ├── main.tsx            # entry
 └── *.css               # co-located styles per component
 ```
@@ -68,31 +74,46 @@ npm run preview    # serve the production build
 
 ## 6. Architectural Notes
 
-- All app state lives in `App.tsx` — pings, rooms, selection, placement mode, mobile
-  detection, map rotation. This is the biggest source of complexity.
-- Coordinates are stored as **percentages of image dimensions** (0–100), not pixels,
-  so they survive zoom/rotation. Conversions live in `src/utils/geometry.ts`.
-- Pings are assigned to rooms via ray-casting (`findRoomForPoint`).
-- The mobile flow uses a **crosshair + bottom sheet form**; desktop uses **drag-to-place**.
-- "Cleaned up" pings stay in state with `cleanedUpAt` set — they are filtered out of
-  the active map but remain available for history.
+- **App.tsx is an orchestrator.** It owns only the top-level glue state
+  (current user, sidebar open, room editor open, cluster spread). Everything
+  domain-shaped lives in hooks.
+- **The four hooks** in `src/hooks/`:
+  - `usePings(currentUserId, rooms, { initialPings? })` — pings CRUD + selection
+    + placement state machine. Re-runs point-in-polygon when rooms change
+    *after* the first render (so caller-provided `roomId`s on hydrated state
+    are trusted).
+  - `useRooms({ initialRooms? })` — rooms CRUD + "drawing a new room" state.
+  - `useMapView()` — image/transform/container refs, rotation, fit-scale.
+  - `useMobileViewport()` — `isMobile` + resize listener.
+- **Coordinates** are stored as percentages of image dimensions (0–100), not
+  pixels, so they survive zoom/rotation. Conversions live in `src/utils/geometry.ts`.
+- **Persistence** (`src/utils/storage.ts`) reads on mount via lazy `useState`
+  initializer, writes on change debounced 250 ms, flushes on `beforeunload`.
+  Versioned key `pingsdorf:v1`; corrupt or version-mismatched payloads fall
+  back to the empty state instead of crashing. `Date` fields are stored as
+  ISO strings and revived on load.
+- **Mobile flow** uses a crosshair + bottom sheet form; desktop uses
+  drag-to-place. Double-tap on mobile drops a ping directly.
+- **"Cleaned up" pings** stay in state with `cleanedUpAt` set — they're
+  filtered out of the active map but remain available for history.
 
-## 7. Known Smells (good first refactors)
+## 7. Known Smells (good follow-up tasks)
 
-- `src/App.tsx` is ~700 lines. Candidates to extract:
-  - `usePings()` hook — ping CRUD + cleanup + clustering
-  - `useRooms()` hook — room CRUD + drawing-mode state
-  - `useMapView()` hook — rotation, fit-scale, transformRef
-  - `useMobileViewport()` hook — `isMobile` + resize listener
-  - `MobilePingForm` → move to `src/components/`
-- No persistence — pings/rooms vanish on refresh. Add `localStorage` (cheap win).
-- `FLOOR_PLAN_URL` is hard-coded to a Wikipedia image — should be configurable / uploadable.
-- No tests. `utils/geometry.ts` is pure and trivial to cover with Vitest.
+- `FLOOR_PLAN_URL` is hard-coded to a Wikipedia image — should be configurable
+  or user-uploadable.
+- No tests. `utils/geometry.ts` and `utils/storage.ts` are both pure-ish and
+  trivial to cover with Vitest. Add Vitest + RTL.
+- No Prettier — `eslint-config-prettier` + a `format` script would be cheap.
+- No CI workflow — a single `lint + build` GitHub Action would catch
+  regressions on PRs.
+- Images persist as base64 inside `localStorage`. The 5 MB-per-image cap
+  combined with the browser's ~5–10 MB localStorage budget will bite once
+  pings accumulate. Consider IndexedDB for image blobs when this matters.
 
 ## 8. Planned Features (don't implement unless asked)
 
 1. Multi-user with real auth (currently mocked via `MOCK_USERS`).
-2. Backend + persistence (likely a separate repo).
+2. Backend + sync between users (likely a separate repo).
 3. Mobile polish / responsive overhaul.
 4. Docker deployment.
 5. Floor-plan upload.
@@ -102,25 +123,37 @@ npm run preview    # serve the production build
 Before changing code:
 1. Read the file you're editing **and** its direct callers.
 2. Check `package.json` scripts before inventing new ones.
-3. Match existing patterns (look at a sibling component) before introducing new ones.
+3. Match existing patterns (look at a sibling component or hook) before
+   introducing new ones.
 
 While coding:
 - No `any`, no `// @ts-ignore` without a comment explaining why.
 - No new dependencies without naming the existing one you considered first.
 - Keep diffs minimal and focused on the requested task.
+- Touching a hook? Re-read `App.tsx` to make sure the consumer side still
+  type-checks and that no behaviour changes leak out.
 
 After coding:
 - `npm run lint` — must pass.
 - `npm run build` — must pass (catches TS errors `tsc --noEmit` would miss).
+- If you changed persisted shape, bump the schema version in `storage.ts`
+  and make `loadAppState` reject old payloads gracefully.
 - Summarise what changed and *why*.
 
 ## 10. Security / Data Handling
 
-- Images are stored as base64 in memory, capped at 5 MB per upload.
-- No backend, so nothing leaves the browser — but treat user content as untrusted
-  once a backend lands. Sanitise before persisting.
+- Images are stored as base64 in `localStorage`, capped at 5 MB per upload.
+- No backend, so nothing leaves the browser — but treat user content as
+  untrusted once a backend lands. Sanitise before persisting.
 - Secrets belong in `.env` files (already gitignored), never in source.
+
+## 11. Useful Links
+
+- [Vite documentation](https://vite.dev/guide/)
+- [React 19 docs](https://react.dev/)
+- [TypeScript handbook](https://www.typescriptlang.org/docs/)
+- [react-zoom-pan-pinch](https://github.com/BetterTyped/react-zoom-pan-pinch)
 
 ---
 
-*Last updated: 2026-05-23. Keep this file accurate; agents trust it.*
+*Last updated: 2026-06-19. Keep this file accurate; agents trust it.*
